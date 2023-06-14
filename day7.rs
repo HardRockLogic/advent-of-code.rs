@@ -39,8 +39,32 @@ fn main() {
             _ => {}
         }
     }
-    //println!("{:?}", paths_sizes);
-    let output: u32 = paths_sizes.into_values().filter(|x| *x <= 100_000).sum();
 
+    part_two(&paths_sizes);
+
+    // Consumes HashMap
+    par_one(paths_sizes);
+}
+
+fn par_one(result: HashMap<PathBuf, u32>) {
+    let output: u32 = result.into_values().filter(|x| *x <= 100_000).sum();
+
+    println!("---Part One---");
+    println!("{output}");
+}
+
+fn part_two(result: &HashMap<PathBuf, u32>) {
+    let disk_space = 70_000_000;
+    let required = 30_000_000;
+    let root = result.get(&PathBuf::from("/")).unwrap();
+    let actual = disk_space - root;
+
+    let output = result
+        .values()
+        .filter(|x| actual + *x >= required)
+        .min()
+        .unwrap();
+
+    println!("---Part Two---");
     println!("{output}");
 }
