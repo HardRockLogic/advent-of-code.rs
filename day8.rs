@@ -1,0 +1,68 @@
+use std::convert::TryInto;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+
+fn main() {
+    let file = File::open("day8.txt").expect("no such file");
+
+    let buf_rd = BufReader::new(file);
+
+    let mut arr: [[u8; 99]; 99] = [[0; 99]; 99];
+
+    for (raw, line) in buf_rd.lines().enumerate() {
+        let line_str = line.unwrap();
+
+        for (cell, chr) in line_str.chars().enumerate() {
+            let digit: u8 = chr.to_digit(10).unwrap().try_into().unwrap();
+
+            arr[raw][cell] = digit;
+        }
+    }
+    let mut total = 392; //99 * 4 - 4(corner elements)
+
+    for i in 1..arr.len() - 1 {
+        for j in 1..arr.len() - 1 {
+            if check_neighbours(&arr, i, j) {
+                total += 1
+            }
+        }
+    }
+    println!("total visible: {}", total);
+}
+
+fn check_neighbours(arr: &[[u8; 99]; 99], i: usize, j: usize) -> bool {
+    let to_check = arr[i][j];
+    let mut occured = 0;
+
+    // Check horizontally
+    for left_raw in 0..j {
+        if arr[i][left_raw] >= to_check {
+            occured += 1;
+            break;
+        }
+    }
+    for right_raw in j + 1..99 {
+        if arr[i][right_raw] >= to_check {
+            occured += 1;
+            break;
+        }
+    }
+    // Check vertically
+    for up_cell in 0..i {
+        if arr[up_cell][j] >= to_check {
+            occured += 1;
+            break;
+        }
+    }
+    for down_cell in i + 1..99 {
+        if arr[down_cell][j] >= to_check {
+            occured += 1;
+            break;
+        }
+    }
+    if occured < 4 {
+        true
+    } else {
+        false
+    }
+}
