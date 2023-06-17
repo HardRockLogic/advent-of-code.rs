@@ -1,6 +1,8 @@
 # Ignore binaries 
 day*
 
-# Exclude .rs files
+# Exclude .rs files, txt's with input data, cargo projects;
 !*.rs
 !day*.txt
+!day*/
+
