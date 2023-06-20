@@ -94,4 +94,23 @@ fn main() {
         let output = val.iter().collect::<String>();
         println!("{output}");
     }
+    println!("----------------------------------------\nand some funky output:\n");
+    for val in signal.map.values() {
+        for pixel in val.iter() {
+            if pixel == &'@' {
+                colorised_inline("green_b", pixel);
+            } else {
+                print!("{pixel}");
+            }
+        }
+        println!();
+    }
+}
+
+fn colorised_inline(option: &str, element: &char) {
+    if option == "red" {
+        print!("\x1b[31m{}\x1b[0m", element);
+    } else if option == "green_b" {
+        print!("\x1b[32;1m{}\x1b[0m", element);
+    }
 }
