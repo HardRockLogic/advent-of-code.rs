@@ -6,43 +6,50 @@ struct Coords {
     x: i32,
     y: i32,
 }
+
 impl Coords {
     fn from(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 }
+
 #[derive(Default, Debug)]
 struct Rope {
     head: Coords,
     tail: Coords,
 }
+
 impl Rope {
     fn set_head(&mut self, coords: Coords) {
         self.head = coords;
     }
+
     fn adjust_tail(&mut self) {
         let [x, y]: [i32; 2] = self.diff();
 
         if x.abs() + y.abs() == 3 {
-            self.tail.x += btr_pow0(x);
-            self.tail.y += btr_pow0(y);
+            self.tail.x += sgn(x);
+            self.tail.y += sgn(y);
         } else {
             self.tail.x += transform(x);
             self.tail.y += transform(y);
         }
     }
+
     fn head(&self) -> Coords {
         Coords {
             x: self.head.x,
             y: self.head.y,
         }
     }
+
     fn tail(&self) -> Coords {
         Coords {
             x: self.tail.x,
             y: self.tail.y,
         }
     }
+
     fn diff(&self) -> [i32; 2] {
         let x = self.head.x - self.tail.x;
         let y = self.head.y - self.tail.y;
@@ -104,9 +111,7 @@ fn main() {
 fn transform(x: i32) -> i32 {
     sgn(x) * (x.abs() - 1)
 }
-fn btr_pow0(x: i32) -> i32 {
-    sgn(x) * x.pow(0)
-}
+
 fn sgn(x: i32) -> i32 {
     if x < 0 {
         -1

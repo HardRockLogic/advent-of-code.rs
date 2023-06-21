@@ -10,6 +10,7 @@ struct Signal {
     crt_raws: [i32; 6],
     map: BTreeMap<i32, [char; 40]>,
 }
+
 impl Signal {
     fn map_init(&mut self, arr: [i32; 6]) {
         for i in arr.iter() {
@@ -17,11 +18,13 @@ impl Signal {
         }
         self.crt_raws = arr;
     }
+
     fn noop(&mut self) {
         self.check_signal();
         self.counter += 1;
         self.pixel += 1;
     }
+
     fn addx(&mut self, val: i32) {
         self.check_signal();
         self.counter += 1;
@@ -32,6 +35,7 @@ impl Signal {
         self.pixel += 1;
         self.value += val;
     }
+
     fn return_bound(&self) -> i32 {
         for bound in self.crt_raws.iter() {
             if bound >= &self.counter {
@@ -40,6 +44,7 @@ impl Signal {
         }
         panic!("more iterations than expected");
     }
+
     fn check_signal(&mut self) {
         let bound = self.return_bound();
 
@@ -88,13 +93,17 @@ fn main() {
                 .unwrap();
 
             signal.addx(register_num);
+        } else {
+            panic!("Unexpected input, no suitable implementation");
         }
     }
     for val in signal.map.values() {
         let output = val.iter().collect::<String>();
         println!("{output}");
     }
-    println!("----------------------------------------\nand some funky output:\n");
+
+    println!("----------------------------------------\nand some funky output:\n----------------------------------------");
+
     for val in signal.map.values() {
         for pixel in val.iter() {
             if pixel == &'@' {

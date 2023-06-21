@@ -7,16 +7,19 @@ struct Signal {
     value: i32,
     map: HashMap<i32, i32>,
 }
+
 impl Signal {
     fn map_init(&mut self, vec: Vec<i32>) {
         for i in vec.iter() {
             self.map.insert(*i, 0);
         }
     }
+
     fn noop(&mut self) {
         self.check_signal();
         self.counter += 1;
     }
+
     fn addx(&mut self, val: i32) {
         self.check_signal();
         self.counter += 1;
@@ -25,11 +28,13 @@ impl Signal {
         self.counter += 1;
         self.value += val;
     }
+
     fn check_signal(&mut self) {
         if let Some(iteration) = self.map.get_mut(&self.counter) {
             *iteration = self.counter * self.value;
         }
     }
+
     fn total_signal_kill(self) -> i32 {
         let total: i32 = self.map.into_values().sum();
 

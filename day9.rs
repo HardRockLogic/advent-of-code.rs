@@ -6,20 +6,24 @@ struct Coords {
     x: i32,
     y: i32,
 }
+
 impl Coords {
     fn from(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 }
+
 #[derive(Default, Debug)]
 struct Rope {
     head: Coords,
     tail: Coords,
 }
+
 impl Rope {
     fn set_head(&mut self, coords: Coords) {
         self.head = coords;
     }
+
     fn adjust_tail(&mut self) {
         let diff: [i32; 2] = self.diff();
 
@@ -63,18 +67,21 @@ impl Rope {
             _ => {}
         }
     }
+
     fn head(&self) -> Coords {
         Coords {
             x: self.head.x,
             y: self.head.y,
         }
     }
+
     fn tail(&self) -> Coords {
         Coords {
             x: self.tail.x,
             y: self.tail.y,
         }
     }
+
     fn diff(&self) -> [i32; 2] {
         let x = self.head.x - self.tail.x;
         let y = self.head.y - self.tail.y;

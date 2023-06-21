@@ -6,15 +6,18 @@ struct Coords {
     x: i32,
     y: i32,
 }
+
 impl Coords {
     fn from(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 }
+
 #[derive(Default, Debug)]
 struct Rope {
     knots: [Coords; 10],
 }
+
 impl Rope {
     fn set_head(&mut self, coords: Coords) {
         self.knots[0] = coords;
@@ -26,25 +29,28 @@ impl Rope {
             y: self.knots[0].y,
         }
     }
+
     fn tail(&self) -> Coords {
         Coords {
             x: self.knots[self.knots.len() - 1].x,
             y: self.knots[self.knots.len() - 1].y,
         }
     }
+
     fn diff(&self, i: usize) -> [i32; 2] {
         let x = self.knots[i - 1].x - self.knots[i].x;
         let y = self.knots[i - 1].y - self.knots[i].y;
 
         [x, y]
     }
+
     fn chain_reaction(&mut self) {
         for i in 1..self.knots.len() {
             let [x, y]: [i32; 2] = self.diff(i);
 
             if x.abs() + y.abs() == 3 {
-                self.knots[i].x += btr_pow0(x);
-                self.knots[i].y += btr_pow0(y);
+                self.knots[i].x += sgn(x);
+                self.knots[i].y += sgn(y);
             } else {
                 self.knots[i].x += transform(x);
                 self.knots[i].y += transform(y);
@@ -106,9 +112,7 @@ fn main() {
 fn transform(x: i32) -> i32 {
     sgn(x) * (x.abs() - 1)
 }
-fn btr_pow0(x: i32) -> i32 {
-    sgn(x) * x.pow(0)
-}
+
 fn sgn(x: i32) -> i32 {
     if x < 0 {
         -1
