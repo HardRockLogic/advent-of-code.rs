@@ -6,4 +6,5 @@ day*
 !day*.txt
 !day*/
 
+day*/target/
 test.txt
