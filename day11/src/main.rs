@@ -1,8 +1,3 @@
-#[allow(unused_imports)]
-use std::{fs, println};
-
-#[allow(unused_imports)]
-use nom::combinator::all_consuming;
 use nom::Finish;
 
 mod parser;
