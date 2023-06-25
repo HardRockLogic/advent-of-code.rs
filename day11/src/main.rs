@@ -11,7 +11,7 @@ fn main() {
         .unwrap()
         .1;
 
-    for _ in 0..20 {
+    for _ in 0..10_000 {
         one_round(&mut monkeys);
     }
 
@@ -27,6 +27,7 @@ fn main() {
 
 fn one_round(entity: &mut Vec<Monkey>) {
     let number_monkeys = entity.len();
+    let divisor_prod = entity.iter().map(|m| m.divisor).product::<u64>();
 
     for i in 0..number_monkeys {
         let mc;
@@ -38,8 +39,9 @@ fn one_round(entity: &mut Vec<Monkey>) {
         }
 
         for mut item in mc.items_vec.iter().copied() {
+            item %= divisor_prod;
             item = mc.operation.eval(item);
-            item /= 3;
+            // item /= 3; // for the first part only
             if item % mc.divisor == 0 {
                 entity[mc.pass_if_true].items_vec.push(item);
             } else {

@@ -17,6 +17,7 @@ pub enum Operation {
 }
 
 impl Operation {
+    #[allow(dead_code)]
     pub fn eval(self, old: u64) -> u64 {
         match self {
             Operation::Add(left, right) => left.eval(old) + right.eval(old),
@@ -33,6 +34,7 @@ pub enum Statemant {
 }
 
 impl Statemant {
+    #[allow(dead_code)]
     pub fn eval(self, old: u64) -> u64 {
         match self {
             Statemant::Old => old,
@@ -52,6 +54,7 @@ use nom_supreme::tag::complete::tag;
 
 use nom_supreme::error::ErrorTree;
 
+#[allow(dead_code)]
 pub fn parse_statemant(i: &str) -> IResult<&str, Statemant, ErrorTree<&str>> {
     alt((
         value(Statemant::Old, tag("old")),
@@ -59,6 +62,7 @@ pub fn parse_statemant(i: &str) -> IResult<&str, Statemant, ErrorTree<&str>> {
     ))(i)
 }
 
+#[allow(dead_code)]
 pub fn parse_operation(i: &str) -> IResult<&str, Operation, ErrorTree<&str>> {
     let (i, (left, _, operand, _, right)) = preceded(
         tag("new = "),
@@ -78,6 +82,7 @@ pub fn parse_operation(i: &str) -> IResult<&str, Operation, ErrorTree<&str>> {
     Ok((i, operand))
 }
 
+#[allow(dead_code)]
 pub fn parse_monkey(i: &str) -> IResult<&str, Monkey, ErrorTree<&str>> {
     let (i, _) = tuple((tag("Monkey "), cmplt::u64, tag(":\n")))(i)?;
 
