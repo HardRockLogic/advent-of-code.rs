@@ -6,12 +6,23 @@ mod parser;
 use parser::{parse_all_monkeys, parse_monkey, Monkey};
 
 fn main() {
-    let monkeys = parse_all_monkeys(concat!(include_str!("../../day11.txt"), "\n"))
+    let mut monkeys = parse_all_monkeys(concat!(include_str!("../../day11.txt"), "\n"))
         .finish()
         .unwrap()
         .1;
 
-    // dbg!(monkeys);
+    for _ in 0..20 {
+        one_round(&mut monkeys);
+    }
+
+    let mut top_collectors = monkeys
+        .iter()
+        .map(|m| m.inspected_items)
+        .collect::<Vec<_>>();
+    top_collectors.sort_by_key(|&m| std::cmp::Reverse(m));
+
+    let total = top_collectors.into_iter().take(2).product::<u64>();
+    dbg!(total);
 }
 
 fn one_round(entity: &mut Vec<Monkey>) {
