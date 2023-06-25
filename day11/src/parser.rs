@@ -1,15 +1,15 @@
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Monkey {
-    items_vec: Vec<u64>,
-    inspected_items: u64,
-    operation: Operation,
-    divisor: u64,
-    pass_if_true: usize,
-    pass_if_false: usize,
+    pub items_vec: Vec<u64>,
+    pub inspected_items: u64,
+    pub operation: Operation,
+    pub divisor: u64,
+    pub pass_if_true: usize,
+    pub pass_if_false: usize,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]
 pub enum Operation {
     Add(Statemant, Statemant),
@@ -17,15 +17,15 @@ pub enum Operation {
 }
 
 impl Operation {
-    pub fn eval_operation(self, old: u64) -> u64 {
+    pub fn eval(self, old: u64) -> u64 {
         match self {
-            Operation::Add(left, right) => left.eval_state(old) + right.eval_state(old),
-            Operation::Mul(left, right) => left.eval_state(old) * right.eval_state(old),
+            Operation::Add(left, right) => left.eval(old) + right.eval(old),
+            Operation::Mul(left, right) => left.eval(old) * right.eval(old),
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[allow(dead_code)]
 pub enum Statemant {
     Old,
@@ -33,7 +33,7 @@ pub enum Statemant {
 }
 
 impl Statemant {
-    pub fn eval_state(self, old: u64) -> u64 {
+    pub fn eval(self, old: u64) -> u64 {
         match self {
             Statemant::Old => old,
             Statemant::Constant(c) => c,
