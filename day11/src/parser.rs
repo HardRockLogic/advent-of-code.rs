@@ -1,4 +1,3 @@
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Monkey {
     pub items_vec: Vec<u64>,
@@ -10,14 +9,12 @@ pub struct Monkey {
 }
 
 #[derive(Clone, Copy, Debug)]
-#[allow(dead_code)]
 pub enum Operation {
     Add(Statemant, Statemant),
     Mul(Statemant, Statemant),
 }
 
 impl Operation {
-    #[allow(dead_code)]
     pub fn eval(self, old: u64) -> u64 {
         match self {
             Operation::Add(left, right) => left.eval(old) + right.eval(old),
@@ -34,7 +31,6 @@ pub enum Statemant {
 }
 
 impl Statemant {
-    #[allow(dead_code)]
     pub fn eval(self, old: u64) -> u64 {
         match self {
             Statemant::Old => old,
@@ -50,11 +46,10 @@ use nom::combinator::{map, value};
 use nom::multi::separated_list1;
 use nom::sequence::{preceded, tuple};
 use nom::IResult;
-use nom_supreme::tag::complete::tag;
 
 use nom_supreme::error::ErrorTree;
+use nom_supreme::tag::complete::tag;
 
-#[allow(dead_code)]
 pub fn parse_statemant(i: &str) -> IResult<&str, Statemant, ErrorTree<&str>> {
     alt((
         value(Statemant::Old, tag("old")),
@@ -62,7 +57,6 @@ pub fn parse_statemant(i: &str) -> IResult<&str, Statemant, ErrorTree<&str>> {
     ))(i)
 }
 
-#[allow(dead_code)]
 pub fn parse_operation(i: &str) -> IResult<&str, Operation, ErrorTree<&str>> {
     let (i, (left, _, operand, _, right)) = preceded(
         tag("new = "),
@@ -82,7 +76,6 @@ pub fn parse_operation(i: &str) -> IResult<&str, Operation, ErrorTree<&str>> {
     Ok((i, operand))
 }
 
-#[allow(dead_code)]
 pub fn parse_monkey(i: &str) -> IResult<&str, Monkey, ErrorTree<&str>> {
     let (i, _) = tuple((tag("Monkey "), cmplt::u64, tag(":\n")))(i)?;
 

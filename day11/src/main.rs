@@ -2,8 +2,7 @@ use nom::Finish;
 
 mod parser;
 
-#[allow(unused_imports)]
-use parser::{parse_all_monkeys, parse_monkey, Monkey};
+use parser::{parse_all_monkeys, Monkey};
 
 fn main() {
     let mut monkeys = parse_all_monkeys(concat!(include_str!("../../day11.txt"), "\n"))
