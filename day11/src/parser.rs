@@ -24,14 +24,13 @@ impl Operation {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[allow(dead_code)]
 pub enum Statemant {
     Old,
     Constant(u64),
 }
 
 impl Statemant {
-    pub fn eval(self, old: u64) -> u64 {
+    fn eval(self, old: u64) -> u64 {
         match self {
             Statemant::Old => old,
             Statemant::Constant(c) => c,
@@ -50,14 +49,14 @@ use nom::IResult;
 use nom_supreme::error::ErrorTree;
 use nom_supreme::tag::complete::tag;
 
-pub fn parse_statemant(i: &str) -> IResult<&str, Statemant, ErrorTree<&str>> {
+fn parse_statemant(i: &str) -> IResult<&str, Statemant, ErrorTree<&str>> {
     alt((
         value(Statemant::Old, tag("old")),
         map(cmplt::u64, Statemant::Constant),
     ))(i)
 }
 
-pub fn parse_operation(i: &str) -> IResult<&str, Operation, ErrorTree<&str>> {
+fn parse_operation(i: &str) -> IResult<&str, Operation, ErrorTree<&str>> {
     let (i, (left, _, operand, _, right)) = preceded(
         tag("new = "),
         tuple((
@@ -76,7 +75,7 @@ pub fn parse_operation(i: &str) -> IResult<&str, Operation, ErrorTree<&str>> {
     Ok((i, operand))
 }
 
-pub fn parse_monkey(i: &str) -> IResult<&str, Monkey, ErrorTree<&str>> {
+fn parse_monkey(i: &str) -> IResult<&str, Monkey, ErrorTree<&str>> {
     let (i, _) = tuple((tag("Monkey "), cmplt::u64, tag(":\n")))(i)?;
 
     let (i, (_, _, items_vec, _)) = tuple((
