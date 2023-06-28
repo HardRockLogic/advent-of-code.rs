@@ -1,5 +1,5 @@
 #[derive(Debug)]
-enum Cell_Type {
+enum CellType {
     Start,
     End,
     Height(u8),
@@ -21,9 +21,9 @@ impl Coord {
 #[derive(Debug)]
 struct Element {
     visited: bool,
-    //ancestor:Option<Vec<Coord>>,
+    ancestor: Option<Vec<Coord>>,
     position: Coord,
-    cell_type: Cell_Type,
+    cell_type: CellType,
 }
 
 #[derive(Debug)]
@@ -45,13 +45,14 @@ impl Grid {
             let mut v = 0;
             for chr in line.chars() {
                 let cell_type = match chr {
-                    'S' => Cell_Type::Start,
-                    'E' => Cell_Type::End,
-                    'a'..='z' => Cell_Type::Height((chr as u8) - b'a'),
+                    'S' => CellType::Start,
+                    'E' => CellType::End,
+                    'a'..='z' => CellType::Height((chr as u8) - b'a'),
                     _ => panic!("unexpected input"),
                 };
                 let element = Element {
                     visited: false,
+                    ancestor: None,
                     position: Coord::from(h, v),
                     cell_type: cell_type,
                 };
