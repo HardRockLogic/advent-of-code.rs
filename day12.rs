@@ -30,6 +30,7 @@ struct Element {
 struct Grid {
     m: usize,
     n: usize,
+    start_coord: Coord,
     data: Vec<Vec<Element>>,
 }
 
@@ -37,6 +38,7 @@ impl Grid {
     fn build(source: &str) -> Self {
         let m = source.lines().count();
         let n = source.lines().next().unwrap().len();
+        let mut start_coord: Option<Coord> = None;
         let mut data = Vec::new();
         let mut h = 0;
 
@@ -45,7 +47,10 @@ impl Grid {
             let mut v = 0;
             for chr in line.chars() {
                 let cell_type = match chr {
-                    'S' => CellType::Start,
+                    'S' => {
+                        start_coord = Some(Coord::from(h, v));
+                        CellType::Start
+                    }
                     'E' => CellType::End,
                     'a'..='z' => CellType::Height((chr as u8) - b'a'),
                     _ => panic!("unexpected input"),
@@ -62,7 +67,13 @@ impl Grid {
             data.push(tempo);
             h += 1;
         }
-        Self { m, n, data }
+        let start_coord = start_coord.unwrap();
+        Self {
+            m,
+            n,
+            start_coord,
+            data,
+        }
     }
 }
 
