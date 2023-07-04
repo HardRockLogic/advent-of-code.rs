@@ -1,16 +1,11 @@
 use std::fmt;
+#[derive(Clone)]
 enum Packet {
     Integer(u8),
     Vector(Vec<Packet>),
 }
 
 impl Packet {
-    fn transform(&self) -> Self {
-        match self {
-            Self::Integer(u) => Self::Vector(vec![Self::Integer(*u)]),
-            Self::Vector(_) => panic!("Shouldnt encounter Vector"),
-        }
-    }
     // find firs occurance
     fn ffo(&self, u: u8, len: usize) -> Option<bool> {
         // println!("left {}u8", u);
@@ -39,48 +34,6 @@ impl Packet {
             }
         }
     }
-
-    fn vector_cmp(&self, other: &Vec<Packet>) -> Option<bool> {
-        match self {
-            Self::Integer(_) => panic!("for Self::Vector comparison only"),
-            Self::Vector(left_vec) => {
-                for idx in 0..left_vec.len() {
-                    match &left_vec[idx] {
-                        Packet::Integer(left_u) => match &other[idx] {
-                            Packet::Integer(right_u) => {
-                                if *left_u < *right_u {
-                                    return Some(true);
-                                } else if *left_u > *right_u {
-                                    return Some(false);
-                                } else {
-                                    continue;
-                                };
-                            }
-                            Packet::Vector(right_v) => {
-                                match other[idx].ffo(*left_u, right_v.len()) {
-                                    Some(bolean) => return Some(bolean),
-                                    None => continue,
-                                }
-                            }
-                        },
-                        Packet::Vector(left_v) => match &other[idx] {
-                            Packet::Integer(right_u) => {
-                                match left_vec[idx].ffo(*right_u, left_v.len()) {
-                                    Some(bolean) => return Some(!bolean),
-                                    None => continue,
-                                }
-                            }
-                            Packet::Vector(right_v) => match left_vec[idx].vector_cmp(right_v) {
-                                Some(bolean) => return Some(bolean),
-                                None => continue,
-                            },
-                        },
-                    }
-                }
-            }
-        }
-        None
-    }
 }
 
 impl fmt::Debug for Packet {
@@ -107,78 +60,104 @@ struct Compare {
 }
 
 impl Compare {
-    fn compare(&self) -> bool {
+    fn compare(&self) -> Option<bool> {
+        let mut return_value = Some(true);
         let right_len = self.right.len();
+        let left_len = self.left.len();
 
-        for idx in 0..self.left.len() {
+        if left_len == right_len {
+            return_value = None;
+        }
+
+        for idx in 0..left_len {
+            if right_len == 0 && left_len > 0 {
+                return Some(false);
+            }
             if idx > right_len - 1 {
-                return false;
+                return Some(false);
             }
             match &self.left[idx] {
                 Packet::Integer(left_u) => match &self.right[idx] {
                     Packet::Integer(right_u) => {
                         if left_u < right_u {
-                            return true;
+                            return Some(true);
                         } else if left_u > right_u {
-                            return false;
+                            return Some(false);
                         } else {
                             continue;
                         }
                     }
                     Packet::Vector(right_v) => match self.right[idx].ffo(*left_u, right_v.len()) {
-                        Some(bolean) => return bolean,
+                        Some(bolean) => return Some(bolean),
                         None => continue,
                     },
                 },
                 Packet::Vector(left_v) => match &self.right[idx] {
                     Packet::Integer(right_u) => match self.left[idx].ffo(*right_u, left_v.len()) {
-                        Some(bolean) => return !bolean,
+                        Some(bolean) => return Some(!bolean),
                         None => continue,
                     },
 
-                    Packet::Vector(right_v) => match self.left[idx].vector_cmp(right_v) {
-                        Some(bolean) => return bolean,
-                        None => continue,
-                    },
+                    Packet::Vector(right_v) => {
+                        let new_left = left_v.to_vec();
+                        let new_right = right_v.to_vec();
+                        let recursive_cmp = Compare {
+                            left: new_left,
+                            right: new_right,
+                        };
+                        match recursive_cmp.compare() {
+                            Some(bolean) => return Some(bolean),
+                            None => continue,
+                        }
+                    }
                 },
             }
         }
         // println!("reaches");
-        true
+        return_value
     }
 }
 
 use std::fs;
-use std::println;
-use std::todo;
 
 fn main() {
-    let s1 = "[9]";
-    let s2 = "[[[9,7,6]]]";
+    let start = std::time::Instant::now();
 
-    let a1 = "[]";
-    let a2 = "[3]";
-
-    let cmp = Compare {
-        left: filling(&s2[1..]),
-        right: filling(&s1[1..]),
+    let file = fs::read_to_string("day13.txt").unwrap();
+    let mut counter = 1;
+    let mut index: usize = 1;
+    let mut ind_list: Vec<usize> = Vec::new();
+    let mut cmp = Compare {
+        left: vec![],
+        right: vec![],
     };
-    println!("{}", cmp.compare());
 
-    // let file = fs::read_to_string("test.txt").unwrap();
-    //
-    // for line in file.lines() {
-    //     if !line.is_empty() {
-    //         println!("{:?}", filling(&line[1..]));
-    //     } else {
-    //         continue;
-    //     }
-    // }
+    for line in file.lines() {
+        if counter == 1 {
+            cmp.left = deserialize(&line[1..]);
+        } else if counter == 2 {
+            cmp.right = deserialize(&line[1..]);
+        }
+        counter += 1;
+
+        if line.is_empty() {
+            counter = 1;
+            if cmp.compare().unwrap() {
+                ind_list.push(index);
+            }
+            index += 1;
+        }
+    }
+    let total: usize = ind_list.iter().sum();
+    let elapsed = start.elapsed();
+
+    println!("{} - in {:?}", total, elapsed);
 }
 
-fn filling(input: &str) -> Vec<Packet> {
+fn deserialize(input: &str) -> Vec<Packet> {
     let mut output: Vec<Packet> = Vec::new();
-    let mut truncate_str = input.to_string();
+    // let mut truncate_str = input.to_string();
+    let mut edge = 0;
     let mut issued = true;
     let mut o_br = 1; // stands for open bracket
     let mut c_br = 0; // stands for closed bracket
@@ -186,7 +165,8 @@ fn filling(input: &str) -> Vec<Packet> {
     let mut acc: Option<char> = None;
 
     for chr in input.chars() {
-        truncate_str.remove(0);
+        // truncate_str.remove(0);
+        edge += 1;
 
         if allowed_counter == 0 {
             o_br = 1;
@@ -197,7 +177,7 @@ fn filling(input: &str) -> Vec<Packet> {
         match chr {
             '[' => {
                 if issued {
-                    'inner: for bracket in truncate_str.chars() {
+                    'inner: for bracket in input[edge..].chars() {
                         if bracket == '[' {
                             o_br += 1;
                         } else if bracket == ']' {
@@ -213,7 +193,7 @@ fn filling(input: &str) -> Vec<Packet> {
                     }
                     issued = false;
                     // println!("{truncate_str}");
-                    output.push(Packet::Vector(filling(&truncate_str)));
+                    output.push(Packet::Vector(deserialize(&input[edge..])));
                 }
             }
             '0'..='9' => {
