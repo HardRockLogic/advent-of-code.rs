@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, vec};
 #[derive(Clone)]
 enum Packet {
     Integer(u8),
@@ -8,14 +8,11 @@ enum Packet {
 impl Packet {
     // find firs occurance
     fn ffo(&self, u: u8, len: usize) -> Option<bool> {
-        // println!("left {}u8", u);
         match self {
             Self::Integer(i) => {
-                // println!("right {}u8", i);
                 if u < *i {
                     return Some(true);
                 } else if u > *i {
-                    // println!("should work");
                     return Some(false);
                 } else {
                     if len > 1 {
@@ -54,12 +51,13 @@ impl fmt::Debug for Packet {
     }
 }
 
-struct Compare {
-    left: Vec<Packet>,
-    right: Vec<Packet>,
+use std::borrow::Cow;
+struct Compare<'a> {
+    left: Cow<'a, Vec<Packet>>,
+    right: Cow<'a, Vec<Packet>>,
 }
 
-impl Compare {
+impl<'a> Compare<'a> {
     fn compare(&self) -> Option<bool> {
         let mut return_value = Some(true);
         let right_len = self.right.len();
@@ -99,11 +97,9 @@ impl Compare {
                     },
 
                     Packet::Vector(right_v) => {
-                        let new_left = left_v.to_vec();
-                        let new_right = right_v.to_vec();
                         let recursive_cmp = Compare {
-                            left: new_left,
-                            right: new_right,
+                            left: Cow::Borrowed(left_v),
+                            right: Cow::Borrowed(right_v),
                         };
                         match recursive_cmp.compare() {
                             Some(bolean) => return Some(bolean),
@@ -123,20 +119,20 @@ use std::fs;
 fn main() {
     let start = std::time::Instant::now();
 
-    let file = fs::read_to_string("day13.txt").unwrap();
+    let file = fs::read_to_string("test.txt").unwrap();
     let mut counter = 1;
     let mut index: usize = 1;
     let mut ind_list: Vec<usize> = Vec::new();
     let mut cmp = Compare {
-        left: vec![],
-        right: vec![],
+        left: Cow::Owned(vec![]),
+        right: Cow::Owned(vec![]),
     };
 
     for line in file.lines() {
         if counter == 1 {
-            cmp.left = deserialize(&line[1..]);
+            cmp.left = Cow::Owned(deserialize(&line[1..]));
         } else if counter == 2 {
-            cmp.right = deserialize(&line[1..]);
+            cmp.right = Cow::Owned(deserialize(&line[1..]));
         }
         counter += 1;
 
@@ -156,18 +152,13 @@ fn main() {
 
 fn deserialize(input: &str) -> Vec<Packet> {
     let mut output: Vec<Packet> = Vec::new();
-    // let mut truncate_str = input.to_string();
-    let mut edge = 0;
     let mut issued = true;
     let mut o_br = 1; // stands for open bracket
     let mut c_br = 0; // stands for closed bracket
     let mut allowed_counter = 0;
     let mut acc: Option<char> = None;
 
-    for chr in input.chars() {
-        // truncate_str.remove(0);
-        edge += 1;
-
+    for (i, chr) in input.chars().enumerate() {
         if allowed_counter == 0 {
             o_br = 1;
             c_br = 0;
@@ -177,7 +168,7 @@ fn deserialize(input: &str) -> Vec<Packet> {
         match chr {
             '[' => {
                 if issued {
-                    'inner: for bracket in input[edge..].chars() {
+                    'inner: for bracket in input[i + 1..].chars() {
                         if bracket == '[' {
                             o_br += 1;
                         } else if bracket == ']' {
@@ -192,8 +183,7 @@ fn deserialize(input: &str) -> Vec<Packet> {
                         }
                     }
                     issued = false;
-                    // println!("{truncate_str}");
-                    output.push(Packet::Vector(deserialize(&input[edge..])));
+                    output.push(Packet::Vector(deserialize(&input[i + 1..])));
                 }
             }
             '0'..='9' => {
@@ -218,7 +208,6 @@ fn deserialize(input: &str) -> Vec<Packet> {
                 if issued {
                     return output;
                 }
-                // issued = true;
                 allowed_counter -= 1;
             }
             _ => unreachable!(),
