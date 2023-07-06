@@ -1,11 +1,17 @@
 use std::{fmt, vec};
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 enum Packet {
     Integer(u8),
     Vector(Vec<Packet>),
 }
 
 impl Packet {
+    fn into_slice<T>(&self, f: impl FnOnce(&[Packet]) -> T) -> T {
+        match self {
+            Self::Integer(u) => f(&[Self::Integer(*u)]),
+            Self::Vector(v) => f(&v[..]),
+        }
+    }
     // find firs occurance
     fn ffo(&self, u: u8, len: usize) -> Option<bool> {
         match self {
@@ -30,6 +36,23 @@ impl Packet {
                 }
             }
         }
+    }
+}
+
+impl std::cmp::PartialOrd for Packet {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (Packet::Integer(a), Packet::Integer(b)) => a.partial_cmp(b),
+            (left, right) => {
+                left.into_slice(|left| right.into_slice(|right| left.partial_cmp(right)))
+            }
+        }
+    }
+}
+
+impl std::cmp::Ord for Packet {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
     }
 }
 
@@ -119,7 +142,7 @@ use std::fs;
 fn main() {
     let start = std::time::Instant::now();
 
-    let file = fs::read_to_string("test.txt").unwrap();
+    let file = fs::read_to_string("day13.txt").unwrap();
     let mut counter = 1;
     let mut index: usize = 1;
     let mut ind_list: Vec<usize> = Vec::new();
