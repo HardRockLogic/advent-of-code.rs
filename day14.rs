@@ -1,13 +1,19 @@
 use std::{
     collections::{HashSet, VecDeque},
-    fs,
+    fs, print, println, todo,
 };
 
 #[derive(Debug, Default)]
 struct Points {
     storage: HashSet<[u32; 2]>,
+    storage_copy: HashSet<[u32; 2]>,
     inter_queue: VecDeque<[u32; 2]>,
+    sand: HashSet<[u32; 2]>,
     deepest_y: u32,
+    prev: [u32; 2],
+    in_rest: u32,
+    left_x: u32,
+    right_x: u32,
 }
 
 impl Points {
@@ -23,7 +29,12 @@ impl Points {
             builded.interpolate();
         }
         let deepest = builded.storage.iter().max_by_key(|&item| item[1]).unwrap();
+        let left_x = builded.storage.iter().min_by_key(|&item| item[0]).unwrap();
+        let right_x = builded.storage.iter().max_by_key(|&item| item[0]).unwrap();
+        builded.left_x = left_x[0];
+        builded.right_x = right_x[0];
         builded.deepest_y = deepest[1];
+        builded.storage_copy = builded.storage.clone();
 
         builded
     }
@@ -47,11 +58,62 @@ impl Points {
         }
         self.inter_queue.clear();
     }
+
+    fn simulate(&mut self) -> u32 {
+        let mut unit = [500, 0];
+        self.prev = unit;
+        unit[1] += 1;
+
+        loop {
+            if unit[1] > self.deepest_y {
+                println!("occurs {:?}", unit);
+                return self.in_rest;
+            }
+
+            match self.storage.get(&unit) {
+                Some(_) => {
+                    // println!("bottom occupied {:?}", unit);
+                    unit[0] -= 1;
+                    // unit[1] += 1;
+                    match self.storage.get(&unit) {
+                        Some(_) => {
+                            // println!("left occupied");
+                            // Reset
+                            unit[0] += 2;
+
+                            match self.storage.get(&unit) {
+                                Some(_) => {
+                                    // println!("right occupied");
+                                    self.in_rest += 1;
+                                    self.storage.insert(self.prev);
+                                    self.sand.insert(self.prev);
+                                    unit = [500, 1];
+                                    self.prev = [500, 0];
+                                }
+                                None => {
+                                    self.prev = unit;
+                                    unit[1] += 1;
+                                }
+                            }
+                        }
+                        None => {
+                            self.prev = unit;
+                            unit[1] += 1;
+                        }
+                    }
+                }
+                None => {
+                    self.prev = unit;
+                    unit[1] += 1;
+                }
+            }
+        }
+    }
 }
 
 fn fill(l: [u32; 2], r: [u32; 2]) -> std::ops::RangeInclusive<u32> {
     if l[0] == r[0] {
-        let start = l[1].min(l[1]);
+        let start = l[1].min(r[1]);
         let end = l[1].max(r[1]);
         return start..=end;
     } else {
@@ -64,9 +126,25 @@ fn fill(l: [u32; 2], r: [u32; 2]) -> std::ops::RangeInclusive<u32> {
 fn main() {
     let file = fs::read_to_string("day14.txt").unwrap();
 
-    let points = Points::build(&file);
+    let mut points = Points::build(&file);
+    points.simulate();
+    for i in 0..=173 {
+        print!("{}) ", i);
+        for j in 455..=526 {
+            match points.storage_copy.get(&[j, i]) {
+                Some(_) => print!("#"),
+                None => match points.sand.get(&[j, i]) {
+                    Some(_) => print!("o"),
+                    None => print!("."),
+                },
+            }
+        }
+        println!();
+    }
+    dbg!(points.sand.len());
 
-    dbg!(points.deepest_y);
+    // dbg!(points.left_x);
+    // dbg!(points.right_x);
 
     // points
     //     .storage
