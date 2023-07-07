@@ -7,9 +7,27 @@ use std::{
 struct Points {
     storage: HashSet<[u32; 2]>,
     inter_queue: VecDeque<[u32; 2]>,
+    deepest_y: u32,
 }
 
 impl Points {
+    fn build(source: &str) -> Self {
+        let mut builded = Points::default();
+        for line in source.lines() {
+            for sub in line.split_whitespace().filter(|item| *item != "->") {
+                let x = sub.split(",").nth(0).unwrap().parse::<u32>().unwrap();
+                let y = sub.split(",").nth(1).unwrap().parse::<u32>().unwrap();
+
+                builded.inter_queue.push_back([x, y]);
+            }
+            builded.interpolate();
+        }
+        let deepest = builded.storage.iter().max_by_key(|&item| item[1]).unwrap();
+        builded.deepest_y = deepest[1];
+
+        builded
+    }
+
     fn interpolate(&mut self) {
         let mut start = self.inter_queue.pop_front().unwrap();
 
@@ -46,19 +64,9 @@ fn fill(l: [u32; 2], r: [u32; 2]) -> std::ops::RangeInclusive<u32> {
 fn main() {
     let file = fs::read_to_string("day14.txt").unwrap();
 
-    let mut points = Points::default();
+    let points = Points::build(&file);
 
-    for line in file.lines() {
-        for sub in line.split_whitespace().filter(|item| *item != "->") {
-            let x = sub.split(",").nth(0).unwrap().parse::<u32>().unwrap();
-            let y = sub.split(",").nth(1).unwrap().parse::<u32>().unwrap();
-
-            points.inter_queue.push_back([x, y]);
-        }
-        points.interpolate();
-    }
-
-    dbg!(points.storage.len());
+    dbg!(points.deepest_y);
 
     // points
     //     .storage
