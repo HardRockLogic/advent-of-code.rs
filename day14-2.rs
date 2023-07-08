@@ -3,14 +3,38 @@ use std::{
     fs,
 };
 
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+struct Coord {
+    x: u32,
+    y: u32,
+}
+
+impl Coord {
+    fn from(x: u32, y: u32) -> Self {
+        Self { x, y }
+    }
+
+    fn get_full_range(&self, other: Self) -> std::ops::RangeInclusive<u32> {
+        if self.x == other.x {
+            let start = self.y.min(other.y);
+            let end = self.y.max(other.y);
+            return start..=end;
+        } else {
+            let start = self.x.min(other.x);
+            let end = self.x.max(other.x);
+            return start..=end;
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 struct Points {
-    storage: HashSet<[u32; 2]>,
-    storage_copy: HashSet<[u32; 2]>,
-    inter_queue: VecDeque<[u32; 2]>,
-    sand: HashSet<[u32; 2]>,
+    storage: HashSet<Coord>,
+    storage_copy: HashSet<Coord>,
+    inter_queue: VecDeque<Coord>,
+    sand: HashSet<Coord>,
     deepest_y: u32,
-    prev: [u32; 2],
+    prev: Coord,
     in_rest: u32,
     left_x: u32,
     right_x: u32,
@@ -25,17 +49,17 @@ impl Points {
                 let x = sub.split(",").nth(0).unwrap().parse::<u32>().unwrap();
                 let y = sub.split(",").nth(1).unwrap().parse::<u32>().unwrap();
 
-                builded.inter_queue.push_back([x, y]);
+                builded.inter_queue.push_back(Coord::from(x, y));
             }
             builded.interpolate();
         }
-        let deepest = builded.storage.iter().max_by_key(|&item| item[1]).unwrap();
-        let left_x = builded.storage.iter().min_by_key(|&item| item[0]).unwrap();
-        let right_x = builded.storage.iter().max_by_key(|&item| item[0]).unwrap();
+        let deepest = builded.storage.iter().max_by_key(|&item| item.y).unwrap();
+        let left_x = builded.storage.iter().min_by_key(|&item| item.x).unwrap();
+        let right_x = builded.storage.iter().max_by_key(|&item| item.x).unwrap();
 
-        builded.left_x = left_x[0];
-        builded.right_x = right_x[0];
-        builded.deepest_y = deepest[1];
+        builded.left_x = left_x.x;
+        builded.right_x = right_x.x;
+        builded.deepest_y = deepest.y;
         builded.storage_copy = builded.storage.clone();
 
         builded
@@ -47,13 +71,13 @@ impl Points {
         for _ in 0..self.inter_queue.len() {
             let end = self.inter_queue.pop_front().unwrap();
 
-            if start[0] == end[0] {
-                for filament in fill(start, end) {
-                    self.storage.insert([start[0], filament]);
+            if start.x == end.x {
+                for filament in start.get_full_range(end) {
+                    self.storage.insert(Coord::from(start.x, filament));
                 }
-            } else if start[1] == end[1] {
-                for filament in fill(start, end) {
-                    self.storage.insert([filament, start[1]]);
+            } else if start.y == end.y {
+                for filament in start.get_full_range(end) {
+                    self.storage.insert(Coord::from(filament, start.y));
                 }
             }
             start = end;
@@ -62,70 +86,54 @@ impl Points {
     }
 
     fn simulate(&mut self) -> u32 {
-        let mut unit = [500, 0];
+        let mut unit = Coord::from(500, 0);
 
         loop {
-            if unit[1] == self.deepest_y + 2 {
+            if unit.y == self.deepest_y + 2 {
                 self.in_rest += 1;
                 self.storage.insert(self.prev);
                 self.sand.insert(self.prev);
-                unit = [500, 1];
-                self.prev = [500, 0];
+                unit = Coord::from(500, 1);
+                self.prev = Coord::from(500, 0);
             }
 
             match self.storage.get(&unit) {
                 Some(_) => {
-                    // println!("bottom occupied {:?}", unit);
-                    unit[0] -= 1;
-                    // unit[1] += 1;
+                    unit.x -= 1;
+
                     match self.storage.get(&unit) {
                         Some(_) => {
-                            // println!("left occupied");
-                            // Reset
-                            unit[0] += 2;
+                            unit.x += 2;
 
                             match self.storage.get(&unit) {
                                 Some(_) => {
-                                    // println!("right occupied");
                                     self.in_rest += 1;
                                     self.storage.insert(self.prev);
                                     self.sand.insert(self.prev);
-                                    if self.prev == [500, 0] {
+                                    if self.prev == Coord::from(500, 0) {
                                         return self.in_rest;
                                     }
-                                    unit = [500, 1];
-                                    self.prev = [500, 0];
+                                    unit = Coord::from(500, 1);
+                                    self.prev = Coord::from(500, 0);
                                 }
                                 None => {
                                     self.prev = unit;
-                                    unit[1] += 1;
+                                    unit.y += 1;
                                 }
                             }
                         }
                         None => {
                             self.prev = unit;
-                            unit[1] += 1;
+                            unit.y += 1;
                         }
                     }
                 }
                 None => {
                     self.prev = unit;
-                    unit[1] += 1;
+                    unit.y += 1;
                 }
             }
         }
-    }
-}
-
-fn fill(l: [u32; 2], r: [u32; 2]) -> std::ops::RangeInclusive<u32> {
-    if l[0] == r[0] {
-        let start = l[1].min(r[1]);
-        let end = l[1].max(r[1]);
-        return start..=end;
-    } else {
-        let start = l[0].min(r[0]);
-        let end = l[0].max(r[0]);
-        return start..=end;
     }
 }
 
@@ -139,9 +147,9 @@ fn main() {
     for i in 0..=173 {
         print!("{}) ", i);
         for j in 420..=580 {
-            match points.storage_copy.get(&[j, i]) {
+            match points.storage_copy.get(&Coord::from(j, i)) {
                 Some(_) => print!("\x1b[32;1m{}\x1b[0m", "#"),
-                None => match points.sand.get(&[j, i]) {
+                None => match points.sand.get(&Coord::from(j, i)) {
                     Some(_) => print!("o"),
                     None => print!("."),
                 },
