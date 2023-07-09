@@ -31,6 +31,7 @@ impl Points {
         let deepest = builded.storage.iter().max_by_key(|&item| item[1]).unwrap();
         let left_x = builded.storage.iter().min_by_key(|&item| item[0]).unwrap();
         let right_x = builded.storage.iter().max_by_key(|&item| item[0]).unwrap();
+
         builded.left_x = left_x[0];
         builded.right_x = right_x[0];
         builded.deepest_y = deepest[1];
@@ -72,18 +73,14 @@ impl Points {
 
             match self.storage.get(&unit) {
                 Some(_) => {
-                    // println!("bottom occupied {:?}", unit);
                     unit[0] -= 1;
-                    // unit[1] += 1;
+
                     match self.storage.get(&unit) {
                         Some(_) => {
-                            // println!("left occupied");
-                            // Reset
                             unit[0] += 2;
 
                             match self.storage.get(&unit) {
                                 Some(_) => {
-                                    // println!("right occupied");
                                     self.in_rest += 1;
                                     self.storage.insert(self.prev);
                                     self.sand.insert(self.prev);
@@ -142,12 +139,4 @@ fn main() {
         println!();
     }
     dbg!(points.sand.len());
-
-    // dbg!(points.left_x);
-    // dbg!(points.right_x);
-
-    // points
-    //     .storage
-    //     .into_iter()
-    //     .for_each(|coord| println!("{:?}", coord));
 }
