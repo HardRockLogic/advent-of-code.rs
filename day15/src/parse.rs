@@ -2,14 +2,14 @@
 
 use std::{collections::HashSet, fmt};
 
-#[derive(Hash)]
+#[derive(Hash, PartialEq, Eq)]
 pub struct Coord {
-    x: i32,
-    y: i32,
+    pub x: i32,
+    pub y: i32,
 }
 
 impl Coord {
-    fn from(x: i32, y: i32) -> Self {
+    pub fn from(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 }
@@ -20,20 +20,20 @@ impl fmt::Debug for Coord {
     }
 }
 
-// #[derive(Debug)]
 pub struct SensorBeaconPair {
-    sensor: Coord,
-    beacon: Coord,
-}
-impl fmt::Debug for SensorBeaconPair {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Sensor({:?}), Beacon({:?})", self.sensor, self.beacon)
-    }
+    pub sensor: Coord,
+    pub beacon: Coord,
+    pub delta: i32,
 }
 
-struct CaveMap {
-    parded_pairs: Vec<SensorBeaconPair>,
-    exhaustive_map: HashSet<Coord>,
+impl fmt::Debug for SensorBeaconPair {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Sensor({:?}), Beacon({:?}), d{}",
+            self.sensor, self.beacon, self.delta
+        )
+    }
 }
 
 use nom::{
@@ -53,11 +53,14 @@ fn parse_line(i: &str) -> IResult<&str, SensorBeaconPair> {
         cc::i32,
     ))(i)?;
 
+    let delta = (sx - bx).abs() + (sy - by).abs();
+
     Ok((
         i,
         SensorBeaconPair {
             sensor: Coord::from(sx, sy),
             beacon: Coord::from(bx, by),
+            delta,
         },
     ))
 }
