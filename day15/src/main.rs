@@ -2,9 +2,10 @@
 
 mod parse;
 
+use itertools::Itertools;
 use nom::Finish;
 use parse::{parse_cave, Coord, SensorBeaconPair};
-use std::{collections::HashSet, println};
+use std::{collections::HashSet, ops::RangeInclusive};
 
 #[derive(Debug)]
 struct CaveMap {
@@ -23,7 +24,7 @@ impl CaveMap {
         }
     }
 
-    fn find_all(&mut self) -> u32 {
+    fn brute_search(&mut self) -> u32 {
         let mut output = 0;
 
         let max = self
@@ -62,14 +63,90 @@ impl CaveMap {
         }
         output
     }
+
+    fn segment_intersection(&self, ohter: i32) -> impl Iterator<Item = RangeInclusive<i32>> {
+        let mut segments = Vec::new();
+
+        for pair in self.parsed_pairs.iter() {
+            let abs_diff = (pair.sensor.y - ohter).abs();
+
+            if abs_diff > pair.delta {
+                continue;
+            }
+
+            let start = pair.sensor.x - pair.delta + abs_diff;
+            let end = pair.sensor.x + pair.delta - abs_diff;
+
+            segments.push(start..=end);
+        }
+        segments.sort_by_key(|r| *r.start());
+
+        segments.into_iter().coalesce(|a, b| {
+            if *a.end() >= b.start() - 1 {
+                Ok(*a.start()..=*b.end().max(a.end()))
+            } else {
+                Err((a, b))
+            }
+        })
+    }
+    fn find_all(&mut self) {
+        for pair in self.parsed_pairs.iter() {
+            let delta =
+                (pair.sensor.x - pair.beacon.x).abs() + (pair.sensor.y - pair.beacon.y).abs();
+            // println!("sensor {:?}; delta {}", pair.sensor, delta);
+
+            let mut start = pair.sensor.x - delta + 1;
+            let mut end = pair.sensor.x + delta - 1;
+
+            for y in pair.sensor.y + 1..=pair.sensor.y + delta {
+                for x in start..=end {
+                    self.exhaustive_map.insert(Coord::from(x, y));
+
+                    if pair.sensor == Coord::from(8, 7) {
+                        // println!("{x}..{y}");
+                    }
+                }
+                start += 1;
+                end -= 1;
+            }
+
+            start = pair.sensor.x - delta;
+            end = pair.sensor.x + delta;
+
+            for y in (pair.sensor.y - delta..=pair.sensor.y).rev() {
+                for x in start..=end {
+                    self.exhaustive_map.insert(Coord::from(x, y));
+                    if pair.sensor == Coord::from(8, 7) {
+                        // println!("{x}..{y}");
+                    }
+                }
+                start += 1;
+                end -= 1;
+            }
+        }
+    }
 }
 
 fn main() {
     let file = std::fs::read_to_string("day15.txt").unwrap();
 
-    let mut res = CaveMap::parse(&file);
+    let res = CaveMap::parse(&file);
 
-    dbg!(res.find_all());
+    'outer: for i in 0..4_000_000 {
+        let items = res
+            .segment_intersection(i)
+            .collect::<Vec<RangeInclusive<i32>>>();
+
+        for edge in items.iter() {
+            if *edge.end() > 0 && *edge.end() < 4_000_000 {
+                let freq: i128 = ((*edge.end() as i128 + 1) * 4_000_000) + i as i128;
+                println!("tuning frequency is {freq}");
+                break 'outer;
+            }
+        }
+    }
+
+    // dbg!(res.brute_search());
 
     // let count = res
     //     .exhaustive_map
