@@ -126,15 +126,18 @@ fn main() {
     let res = CaveMap::parse(&file);
 
     'outer: for i in 0..4_000_000 {
-        let items = res
-            .segment_intersection(i)
-            .collect::<Vec<RangeInclusive<i32>>>();
+        let mut items = res.segment_intersection(i);
 
-        for edge in items.iter() {
-            if *edge.end() > 0 && *edge.end() < 4_000_000 {
-                let freq: i128 = ((*edge.end() as i128 + 1) * 4_000_000) + i as i128;
-                println!("tuning frequency is {freq}");
-                break 'outer;
+        loop {
+            match items.next() {
+                Some(range) => {
+                    if *range.end() > 0 && *range.end() < 4_000_000 {
+                        let freq: i128 = ((*range.end() as i128 + 1) * 4_000_000) + i as i128;
+                        println!("tuning frequency is {freq}");
+                        break 'outer;
+                    }
+                }
+                None => break,
             }
         }
     }
