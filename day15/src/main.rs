@@ -38,8 +38,6 @@ impl CaveMap {
             .min_by_key(|&pair| pair.sensor.x)
             .unwrap();
 
-        // println!("max -> {max:?}\nmin -> {min:?}");
-
         dbg!((max.sensor.x + max.delta) - (min.sensor.x - min.delta));
 
         'outer: for i in min.sensor.x - min.delta..=max.sensor.x + max.delta {
@@ -93,7 +91,6 @@ impl CaveMap {
         for pair in self.parsed_pairs.iter() {
             let delta =
                 (pair.sensor.x - pair.beacon.x).abs() + (pair.sensor.y - pair.beacon.y).abs();
-            // println!("sensor {:?}; delta {}", pair.sensor, delta);
 
             let mut start = pair.sensor.x - delta + 1;
             let mut end = pair.sensor.x + delta - 1;
@@ -102,9 +99,7 @@ impl CaveMap {
                 for x in start..=end {
                     self.exhaustive_map.insert(Coord::from(x, y));
 
-                    if pair.sensor == Coord::from(8, 7) {
-                        // println!("{x}..{y}");
-                    }
+                    if pair.sensor == Coord::from(8, 7) {}
                 }
                 start += 1;
                 end -= 1;
@@ -116,9 +111,7 @@ impl CaveMap {
             for y in (pair.sensor.y - delta..=pair.sensor.y).rev() {
                 for x in start..=end {
                     self.exhaustive_map.insert(Coord::from(x, y));
-                    if pair.sensor == Coord::from(8, 7) {
-                        // println!("{x}..{y}");
-                    }
+                    if pair.sensor == Coord::from(8, 7) {}
                 }
                 start += 1;
                 end -= 1;
@@ -145,14 +138,4 @@ fn main() {
             }
         }
     }
-
-    // dbg!(res.brute_search());
-
-    // let count = res
-    //     .exhaustive_map
-    //     .iter()
-    //     .filter(|elem| elem.y == 10)
-    //     .count();
-    //
-    // dbg!(count);
 }
