@@ -5,6 +5,8 @@ mod parse;
 use itertools::Itertools;
 use nom::Finish;
 use parse::{parse_cave, Coord, SensorBeaconPair};
+use rayon::prelude::*;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::{collections::HashSet, ops::RangeInclusive};
 
 #[derive(Debug)]
@@ -125,20 +127,24 @@ fn main() {
 
     let res = CaveMap::parse(&file);
 
-    'outer: for i in 0..4_000_000 {
-        let mut items = res.segment_intersection(i);
+    let finished = AtomicBool::new(false);
 
-        loop {
-            match items.next() {
-                Some(range) => {
-                    if *range.end() > 0 && *range.end() < 4_000_000 {
-                        let freq: i128 = ((*range.end() as i128 + 1) * 4_000_000) + i as i128;
-                        println!("tuning frequency is {freq}");
-                        break 'outer;
+    (0..4_000_000).into_par_iter().for_each(|i| {
+        if !finished.load(Ordering::SeqCst) {
+            let mut items = res.segment_intersection(i);
+
+            loop {
+                match items.next() {
+                    Some(range) => {
+                        if *range.end() > 0 && *range.end() < 4_000_000 {
+                            let freq: i128 = ((*range.end() as i128 + 1) * 4_000_000) + i as i128;
+                            println!("tuning frequency is {freq}");
+                            finished.store(true, Ordering::SeqCst);
+                        }
                     }
+                    None => break,
                 }
-                None => break,
             }
         }
-    }
+    });
 }
