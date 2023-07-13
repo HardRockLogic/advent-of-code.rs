@@ -1,6 +1,4 @@
-#![allow(dead_code, unused_imports)]
-
-use std::{collections::HashSet, fmt};
+use std::fmt;
 
 #[derive(Hash, PartialEq, Eq)]
 pub struct Coord {
@@ -38,7 +36,7 @@ impl fmt::Debug for SensorBeaconPair {
 
 use nom::{
     bytes::complete::tag, character::complete as cc, multi::separated_list1, sequence::tuple,
-    Finish, IResult,
+    IResult,
 };
 
 fn parse_line(i: &str) -> IResult<&str, SensorBeaconPair> {
