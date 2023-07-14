@@ -141,7 +141,7 @@ fn main() {
                 match items.next() {
                     Some(range) => {
                         if *range.end() > 0 && *range.end() < 4_000_000 {
-                            let freq: i128 = ((*range.end() as i128 + 1) * 4_000_000) + i as i128;
+                            let freq: u64 = ((*range.end() as u64 + 1) * 4_000_000) + i as u64;
                             println!("tuning frequency is {freq}");
                             finished.store(true, Ordering::SeqCst);
                         }
