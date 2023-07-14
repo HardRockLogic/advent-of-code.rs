@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 mod parse;
 
 use itertools::Itertools;
@@ -10,6 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::{collections::HashSet, ops::RangeInclusive};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct CaveMap {
     parsed_pairs: Vec<SensorBeaconPair>,
     exhaustive_map: HashSet<Coord>,
@@ -26,6 +25,7 @@ impl CaveMap {
         }
     }
 
+    #[allow(dead_code)]
     fn brute_search(&mut self) -> u32 {
         let mut output = 0;
 
@@ -89,6 +89,10 @@ impl CaveMap {
             }
         })
     }
+    // Literally finds all points, only for debug purpouse
+    // For TEST example ONLY!!!
+    // could cause system failure on real input data
+    #[allow(dead_code)]
     fn find_all(&mut self) {
         for pair in self.parsed_pairs.iter() {
             let delta =
