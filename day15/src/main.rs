@@ -5,6 +5,7 @@ use nom::Finish;
 use parse::{parse_cave, Coord, SensorBeaconPair};
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use std::{collections::HashSet, ops::RangeInclusive};
 
 #[derive(Debug)]
@@ -26,8 +27,8 @@ impl CaveMap {
     }
 
     #[allow(dead_code)]
-    fn brute_search(&mut self) -> u32 {
-        let mut output = 0;
+    fn brute_search(&self) -> u32 {
+        let output = Mutex::new(0);
 
         let max = self
             .parsed_pairs
@@ -40,10 +41,14 @@ impl CaveMap {
             .min_by_key(|&pair| pair.sensor.x)
             .unwrap();
 
-        dbg!((max.sensor.x + max.delta) - (min.sensor.x - min.delta));
+        // dbg!((max.sensor.x + max.delta) - (min.sensor.x - min.delta));
 
-        'outer: for i in min.sensor.x - min.delta..=max.sensor.x + max.delta {
+        let start = min.sensor.x - min.delta;
+        let end = max.sensor.x + max.delta;
+
+        (start..=end).into_par_iter().for_each(|i| {
             let target = Coord::from(i, 2_000_000);
+            // let output_ref = output.clone();
 
             for pair in self.parsed_pairs.iter() {
                 // in this particular case, this control-flow eliminates only 1 point,
@@ -56,11 +61,16 @@ impl CaveMap {
                     (target.x - pair.sensor.x).abs() + (target.y - pair.sensor.y).abs();
 
                 if target_delta <= pair.delta {
-                    output += 1;
-                    continue 'outer;
+                    let mut output = output.lock().unwrap();
+                    *output += 1;
+                    return;
                 }
             }
-        }
+        });
+
+        let guard = output.lock().unwrap();
+        let output: u32 = guard.clone();
+
         output
     }
 
@@ -130,6 +140,8 @@ fn main() {
     let file = std::fs::read_to_string("day15.txt").unwrap();
 
     let res = CaveMap::parse(&file);
+
+    dbg!(res.brute_search());
 
     let finished = AtomicBool::new(false);
 
