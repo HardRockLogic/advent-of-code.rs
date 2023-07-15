@@ -26,6 +26,9 @@ impl CaveMap {
         }
     }
 
+    // This method is just for representation, as segment_intersection is more performant and it is
+    // better to leverage those one by passing 2_000_000 as an argument and finding sum of range
+    // positions.
     #[allow(dead_code)]
     fn brute_search(&self) -> u32 {
         let output = Mutex::new(0);
@@ -48,7 +51,6 @@ impl CaveMap {
 
         (start..=end).into_par_iter().for_each(|i| {
             let target = Coord::from(i, 2_000_000);
-            // let output_ref = output.clone();
 
             for pair in self.parsed_pairs.iter() {
                 // in this particular case, this control-flow eliminates only 1 point,
