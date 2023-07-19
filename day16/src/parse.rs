@@ -1,5 +1,6 @@
 #![allow(dead_code, unused_imports)]
 
+#[derive(Default, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct Name([u8; 2]);
 
 impl fmt::Debug for Name {
@@ -20,13 +21,17 @@ impl Name {
             Self(slice.as_bytes().try_into().unwrap())
         })(i)
     }
+
+    pub fn from(s: &str) -> Self {
+        Self(s.as_bytes().try_into().unwrap())
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Hash)]
 pub struct Valve {
-    name: Name,
-    flow: u32,
-    adjecents: Vec<Name>,
+    pub name: Name,
+    pub flow: u32,
+    pub adjecents: Vec<Name>,
 }
 
 use core::fmt;
