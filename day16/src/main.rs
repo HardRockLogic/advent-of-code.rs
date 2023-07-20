@@ -2,6 +2,8 @@
 
 mod parse;
 
+use textplots::{Chart, Plot, Shape};
+
 use nom::Finish;
 use parse::{Name, Valve};
 use std::{
@@ -74,7 +76,7 @@ impl DistMap {
         options
     }
 
-    fn brute_search(&self) {
+    fn brute_search(&self) -> Vec<(f32, f32)> {
         let mut queue = VecDeque::new();
         let mut highest: u32 = 0;
         queue.push_back(State {
@@ -84,18 +86,27 @@ impl DistMap {
             opened: vec![],
         });
 
+        let mut points: Vec<(f32, f32)> = Vec::new();
+        let mut count_x = 0.0;
+        let mut count_y = 0.0;
+
         while !queue.is_empty() {
+            count_x += 1.0;
             let state = queue.pop_front().unwrap();
             self.best_option_greedy(state)
                 .into_iter()
                 .for_each(|sub_state| {
+                    count_y += 1.0;
                     if sub_state.value > highest {
                         highest = sub_state.value;
                     }
                     queue.push_back(sub_state)
                 });
+            points.push((count_x, count_y));
+            // count_y = 0.0;
         }
         dbg!(highest);
+        points
     }
 }
 
@@ -115,7 +126,12 @@ fn main() {
     //         Name::from("EE"),
     //     ],
     // };
-    map.brute_search();
+    let points = map.brute_search();
+    // chart-width, chart-height, dataset-start, dataset-end
+    // 280, 90, 0.0, 190_000.0
+    Chart::new(280, 80, 0.0, 190_000.0)
+        .lineplot(&Shape::Lines(&points))
+        .display();
 
     // dbg!(map.best_option_greedy(state));
 }
