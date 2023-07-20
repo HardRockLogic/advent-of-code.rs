@@ -6,7 +6,7 @@ use nom::Finish;
 use parse::{Name, Valve};
 use std::{
     collections::{HashMap, VecDeque},
-    fs,
+    dbg, fs,
     iter::once,
 };
 
@@ -15,7 +15,7 @@ struct State {
     lable: Name,
     value: u32,
     time: u32,
-    history: Vec<Name>,
+    opened: Vec<Name>,
 }
 
 #[derive(Debug, Default)]
@@ -40,12 +40,7 @@ impl DistMap {
         }
         dist
     }
-    // struct State {
-    //     lable: Name,
-    //     value: u32,
-    //     time: u32,
-    //     history: Vec<Name>,
-    // }
+
     fn best_option_greedy(&self, state: State) -> Vec<State> {
         let mut queue: VecDeque<(Name, u32)> = VecDeque::new();
         let mut enqueued: Vec<Name> = Vec::new();
@@ -61,12 +56,12 @@ impl DistMap {
 
             let node = self.data.get(&name).unwrap();
 
-            if node.1 != 0 && !state.history.contains(&name) {
+            if node.1 != 0 && !state.opened.contains(&name) {
                 options.push(State {
                     lable: name,
                     value: state.value + node.1 * (elapsed - 1),
                     time: elapsed - 1,
-                    history: state.history.iter().copied().chain(once(name)).collect(),
+                    opened: state.opened.iter().copied().chain(once(name)).collect(),
                 });
             }
             node.2.iter().for_each(|v| {
@@ -78,44 +73,49 @@ impl DistMap {
         }
         options
     }
+
+    fn brute_search(&self) {
+        let mut queue = VecDeque::new();
+        let mut highest: u32 = 0;
+        queue.push_back(State {
+            lable: Name::from("AA"),
+            value: 0,
+            time: 30,
+            opened: vec![],
+        });
+
+        while !queue.is_empty() {
+            let state = queue.pop_front().unwrap();
+            self.best_option_greedy(state)
+                .into_iter()
+                .for_each(|sub_state| {
+                    if sub_state.value > highest {
+                        highest = sub_state.value;
+                    }
+                    queue.push_back(sub_state)
+                });
+        }
+        dbg!(highest);
+    }
 }
 
-// #[derive(Debug)]
-// struct Valves {
-//     map: Vec<Valve>,
-// }
-//
-// impl Valves {
-//     fn init(s: &str) -> Self {
-//         Self {
-//             map: s
-//                 .lines()
-//                 .map(|line| Valve::scrap_valve(line).finish().unwrap().1)
-//                 .collect(),
-//         }
-//     }
-// }
-
 fn main() {
-    let file = fs::read_to_string("test.txt").unwrap();
+    let file = fs::read_to_string("day16.txt").unwrap();
 
     let map = DistMap::init(&file);
-    let state = State {
-        lable: Name::from("EE"),
-        value: 1639,
-        time: 9,
-        history: vec![
-            Name::from("DD"),
-            Name::from("BB"),
-            Name::from("JJ"),
-            Name::from("HH"),
-            Name::from("EE"),
-        ],
-    };
+    // let state = State {
+    //     lable: Name::from("EE"),
+    //     value: 1639,
+    //     time: 9,
+    //     opened: vec![
+    //         Name::from("DD"),
+    //         Name::from("BB"),
+    //         Name::from("JJ"),
+    //         Name::from("HH"),
+    //         Name::from("EE"),
+    //     ],
+    // };
+    map.brute_search();
 
-    dbg!(map.best_option_greedy(state));
-
-    // for valve in &map.map {
-    //     println!("{valve:?}");
-    // }
+    // dbg!(map.best_option_greedy(state));
 }
