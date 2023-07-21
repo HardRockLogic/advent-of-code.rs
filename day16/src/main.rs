@@ -7,8 +7,8 @@ use textplots::{Chart, Plot, Shape};
 use nom::Finish;
 use parse::{Name, Valve};
 use std::{
-    collections::{HashMap, VecDeque},
-    dbg, fs,
+    collections::{HashMap, HashSet, VecDeque},
+    fs,
     iter::once,
 };
 
@@ -19,6 +19,11 @@ struct State {
     time: u32,
     opened: Vec<Name>,
 }
+// impl PartialEq for State {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.opened == other.opened
+//     }
+// }
 
 #[derive(Debug, Default)]
 struct DistMap {
@@ -77,7 +82,7 @@ impl DistMap {
     }
 
     fn brute_search(&self) -> Vec<(f32, f32)> {
-        let mut queue = VecDeque::new();
+        let mut queue = VecDeque::with_capacity(195_000);
         let mut highest: u32 = 0;
         queue.push_back(State {
             lable: Name::from("AA"),
@@ -89,6 +94,7 @@ impl DistMap {
         let mut points: Vec<(f32, f32)> = Vec::new();
         let mut count_x = 0.0;
         let mut count_y = 0.0;
+        let mut count = 0;
 
         while !queue.is_empty() {
             count_x += 1.0;
@@ -100,10 +106,13 @@ impl DistMap {
                     if sub_state.value > highest {
                         highest = sub_state.value;
                     }
-                    queue.push_back(sub_state)
+                    if sub_state.opened.len() == 9 {
+                        count += 1;
+                    }
+
+                    queue.push_back(sub_state);
                 });
             points.push((count_x, count_y));
-            // count_y = 0.0;
         }
         dbg!(highest);
         points
@@ -114,24 +123,11 @@ fn main() {
     let file = fs::read_to_string("day16.txt").unwrap();
 
     let map = DistMap::init(&file);
-    // let state = State {
-    //     lable: Name::from("EE"),
-    //     value: 1639,
-    //     time: 9,
-    //     opened: vec![
-    //         Name::from("DD"),
-    //         Name::from("BB"),
-    //         Name::from("JJ"),
-    //         Name::from("HH"),
-    //         Name::from("EE"),
-    //     ],
-    // };
+
     let points = map.brute_search();
     // chart-width, chart-height, dataset-start, dataset-end
     // 280, 90, 0.0, 190_000.0
     Chart::new(280, 80, 0.0, 190_000.0)
         .lineplot(&Shape::Lines(&points))
         .display();
-
-    // dbg!(map.best_option_greedy(state));
 }

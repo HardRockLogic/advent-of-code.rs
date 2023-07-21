@@ -1,6 +1,6 @@
 #![allow(dead_code, unused_imports)]
 
-#[derive(Default, Hash, PartialEq, Eq, Clone, Copy)]
+#[derive(Default, Hash, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub struct Name([u8; 2]);
 
 impl fmt::Debug for Name {
@@ -17,9 +17,7 @@ impl fmt::Display for Name {
 
 impl Name {
     fn scrap_name(i: &str) -> IResult<&str, Self> {
-        map(take(2usize), |slice: &str| {
-            Self(slice.as_bytes().try_into().unwrap())
-        })(i)
+        map(take(2usize), |slice: &str| Self::from(slice))(i)
     }
 
     pub fn from(s: &str) -> Self {
