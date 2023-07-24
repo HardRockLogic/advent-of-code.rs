@@ -2,13 +2,14 @@
 
 mod parse;
 
-use textplots::{Chart, Plot, Shape};
+use rgb::RGB8;
+use textplots::{Chart, ColorPlot, Shape};
 
 use nom::Finish;
 use parse::{Name, Valve};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
-    fs,
+    dbg, fs,
     iter::once,
 };
 
@@ -81,22 +82,28 @@ impl DistMap {
         options
     }
 
-    fn brute_search(&self) -> Vec<(f32, f32)> {
+    fn brute_search(&self) -> (Vec<(f32, f32)>, Vec<(f32, f32)>) {
         let mut queue = VecDeque::with_capacity(195_000);
         let mut highest: u32 = 0;
         queue.push_back(State {
             lable: Name::from("AA"),
             value: 0,
-            time: 30,
+            time: 26,
             opened: vec![],
         });
 
+        // Variables for statistics
         let mut points: Vec<(f32, f32)> = Vec::new();
+        let mut empty_returns: Vec<(f32, f32)> = Vec::new();
         let mut count_x = 0.0;
         let mut count_y = 0.0;
+        #[allow(unused_assignments)]
         let mut count = 0;
+        let mut empty = 0.;
+        let mut switch = true;
 
         while !queue.is_empty() {
+            count = 0;
             count_x += 1.0;
             let state = queue.pop_front().unwrap();
             self.best_option_greedy(state)
@@ -106,16 +113,22 @@ impl DistMap {
                     if sub_state.value > highest {
                         highest = sub_state.value;
                     }
-                    if sub_state.opened.len() == 9 {
-                        count += 1;
-                    }
+                    count += 1;
 
                     queue.push_back(sub_state);
                 });
             points.push((count_x, count_y));
+            if count == 0 {
+                empty += 1.;
+                switch = true;
+            } else if switch {
+                empty_returns.push((count_x, empty));
+                empty = 0.;
+                switch = false
+            }
         }
         dbg!(highest);
-        points
+        (points, empty_returns)
     }
 }
 
@@ -124,10 +137,27 @@ fn main() {
 
     let map = DistMap::init(&file);
 
-    let points = map.brute_search();
+    let (points, empties) = map.brute_search();
     // chart-width, chart-height, dataset-start, dataset-end
     // 280, 90, 0.0, 190_000.0
-    Chart::new(280, 80, 0.0, 190_000.0)
-        .lineplot(&Shape::Lines(&points))
+    Chart::new(280, 80, 0.0, 50_000.0)
+        .linecolorplot(
+            &Shape::Lines(&points),
+            RGB8 {
+                r: 0,
+                g: 0,
+                b: 255_u8,
+            },
+        )
+        .display();
+    Chart::new(280, 80, 0.0, 40_000.0)
+        .linecolorplot(
+            &Shape::Lines(&empties),
+            RGB8 {
+                r: 255_u8,
+                g: 0,
+                b: 0,
+            },
+        )
         .display();
 }
