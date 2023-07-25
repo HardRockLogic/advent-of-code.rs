@@ -2,6 +2,7 @@
 
 mod parse;
 
+use rayon::prelude::*;
 use rgb::RGB8;
 use textplots::{Chart, ColorPlot, Shape};
 
@@ -11,10 +12,10 @@ use std::{
     collections::{HashMap, HashSet, VecDeque},
     dbg, fs,
     iter::once,
-    println,
+    print, println,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct State {
     lable: Name,
     value: u32,
@@ -149,23 +150,45 @@ impl DistMap {
     }
 
     fn pair_all_possible(&self) {
-        let mut highest: u32 = 0;
+        // let mut highest: u32 = 0;
+        //
+        // for i in 0..self.complete.len() {
+        //     for j in i..self.complete.len() {
+        //         if self.complete[i].is_diverge(&self.complete[j]) {
+        //             let sum = self.complete[i].value + self.complete[j].value;
+        //             if sum > highest {
+        //                 highest = sum;
+        //             }
+        //         }
+        //     }
+        // }
+        // println!("highest pair is {}", highest);
+        let highest = self
+            .complete
+            .par_iter()
+            .enumerate()
+            .map(|(i, item1)| {
+                self.complete[i..]
+                    .par_iter()
+                    .map(|item2| {
+                        if item1.is_diverge(item2) {
+                            item1.value + item2.value
+                        } else {
+                            0
+                        }
+                    })
+                    .max()
+                    .unwrap_or(0)
+            })
+            .max()
+            .unwrap_or(0);
 
-        for i in 0..self.complete.len() {
-            for j in i..self.complete.len() {
-                if self.complete[i].is_diverge(&self.complete[j]) {
-                    let sum = self.complete[i].value + self.complete[j].value;
-                    if sum > highest {
-                        highest = sum;
-                    }
-                }
-            }
-        }
         println!("highest pair is {}", highest);
     }
 }
 
 fn main() {
+    let start = std::time::Instant::now();
     let file = fs::read_to_string("day16.txt").unwrap();
 
     let mut map = DistMap::init(&file);
@@ -194,4 +217,6 @@ fn main() {
             },
         )
         .display();
+    let end = start.elapsed();
+    println!("elapsed time {:?}", end);
 }
