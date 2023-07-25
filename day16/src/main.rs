@@ -11,6 +11,7 @@ use std::{
     collections::{HashMap, HashSet, VecDeque},
     dbg, fs,
     iter::once,
+    println,
 };
 
 #[derive(Debug)]
@@ -19,6 +20,19 @@ struct State {
     value: u32,
     time: u32,
     opened: Vec<Name>,
+}
+
+impl State {
+    fn is_diverge(&self, other: &Self) -> bool {
+        for a in self.opened.iter() {
+            for b in other.opened.iter() {
+                if a == b {
+                    return false;
+                }
+            }
+        }
+        true
+    }
 }
 // impl PartialEq for State {
 //     fn eq(&self, other: &Self) -> bool {
@@ -30,7 +44,7 @@ struct State {
 struct DistMap {
     first: Name,
     data: HashMap<Name, (usize, u32, Vec<Name>)>,
-    dist: Vec<Vec<u32>>,
+    complete: Vec<State>,
 }
 
 impl DistMap {
@@ -49,7 +63,7 @@ impl DistMap {
         dist
     }
 
-    fn best_option_greedy(&self, state: State) -> Vec<State> {
+    fn best_option_greedy(&mut self, state: State) -> Vec<State> {
         let mut queue: VecDeque<(Name, u32)> = VecDeque::new();
         let mut enqueued: Vec<Name> = Vec::new();
         let mut options: Vec<State> = Vec::new();
@@ -79,10 +93,13 @@ impl DistMap {
                 }
             });
         }
+        if options.is_empty() {
+            self.complete.push(state);
+        }
         options
     }
 
-    fn brute_search(&self) -> (Vec<(f32, f32)>, Vec<(f32, f32)>) {
+    fn brute_search(&mut self) -> (Vec<(f32, f32)>, Vec<(f32, f32)>) {
         let mut queue = VecDeque::with_capacity(195_000);
         let mut highest: u32 = 0;
         queue.push_back(State {
@@ -130,14 +147,31 @@ impl DistMap {
         dbg!(highest);
         (points, empty_returns)
     }
+
+    fn pair_all_possible(&self) {
+        let mut highest: u32 = 0;
+
+        for i in 0..self.complete.len() {
+            for j in i..self.complete.len() {
+                if self.complete[i].is_diverge(&self.complete[j]) {
+                    let sum = self.complete[i].value + self.complete[j].value;
+                    if sum > highest {
+                        highest = sum;
+                    }
+                }
+            }
+        }
+        println!("highest pair is {}", highest);
+    }
 }
 
 fn main() {
     let file = fs::read_to_string("day16.txt").unwrap();
 
-    let map = DistMap::init(&file);
+    let mut map = DistMap::init(&file);
 
     let (points, empties) = map.brute_search();
+    map.pair_all_possible();
     // chart-width, chart-height, dataset-start, dataset-end
     // 280, 90, 0.0, 190_000.0
     Chart::new(280, 80, 0.0, 50_000.0)
