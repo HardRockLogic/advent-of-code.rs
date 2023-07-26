@@ -1,5 +1,3 @@
-#![allow(dead_code, unused_imports)]
-
 #[derive(Default, Hash, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub struct Name([u8; 2]);
 

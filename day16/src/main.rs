@@ -1,5 +1,3 @@
-#![allow(dead_code, unused_imports)]
-
 mod parse;
 
 use rayon::prelude::*;
@@ -9,10 +7,9 @@ use textplots::{Chart, ColorPlot, Shape};
 use nom::Finish;
 use parse::{Name, Valve};
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashMap, VecDeque},
     dbg, fs,
     iter::once,
-    print, println,
 };
 
 #[derive(Debug, Clone)]
@@ -35,11 +32,6 @@ impl State {
         true
     }
 }
-// impl PartialEq for State {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.opened == other.opened
-//     }
-// }
 
 #[derive(Debug, Default)]
 struct DistMap {
@@ -150,19 +142,6 @@ impl DistMap {
     }
 
     fn pair_all_possible(&self) {
-        // let mut highest: u32 = 0;
-        //
-        // for i in 0..self.complete.len() {
-        //     for j in i..self.complete.len() {
-        //         if self.complete[i].is_diverge(&self.complete[j]) {
-        //             let sum = self.complete[i].value + self.complete[j].value;
-        //             if sum > highest {
-        //                 highest = sum;
-        //             }
-        //         }
-        //     }
-        // }
-        // println!("highest pair is {}", highest);
         let highest = self
             .complete
             .par_iter()
