@@ -35,8 +35,7 @@ impl State {
 
 #[derive(Debug, Default)]
 struct DistMap {
-    first: Name,
-    data: HashMap<Name, (usize, u32, Vec<Name>)>,
+    data: HashMap<Name, (u32, Vec<Name>)>,
     complete: Vec<State>,
 }
 
@@ -44,14 +43,10 @@ impl DistMap {
     fn init(s: &str) -> Self {
         let mut dist = DistMap::default();
 
-        for (i, line) in s.lines().enumerate() {
+        for line in s.lines() {
             let valve = Valve::scrap_valve(line).finish().unwrap().1;
-            if i == 0 {
-                dist.first = valve.name;
-            }
 
-            dist.data
-                .insert(valve.name, (i, valve.flow, valve.adjecents));
+            dist.data.insert(valve.name, (valve.flow, valve.adjecents));
         }
         dist
     }
@@ -71,15 +66,15 @@ impl DistMap {
 
             let node = self.data.get(&name).unwrap();
 
-            if node.1 != 0 && !state.opened.contains(&name) {
+            if node.0 != 0 && !state.opened.contains(&name) {
                 options.push(State {
                     lable: name,
-                    value: state.value + node.1 * (elapsed - 1),
+                    value: state.value + node.0 * (elapsed - 1),
                     time: elapsed - 1,
                     opened: state.opened.iter().copied().chain(once(name)).collect(),
                 });
             }
-            node.2.iter().for_each(|v| {
+            node.1.iter().for_each(|v| {
                 if !enqueued.contains(&v) {
                     queue.push_back((*v, elapsed - 1));
                     enqueued.push(*v);
@@ -105,8 +100,8 @@ impl DistMap {
         // Variables for statistics
         let mut points: Vec<(f32, f32)> = Vec::new();
         let mut empty_returns: Vec<(f32, f32)> = Vec::new();
-        let mut count_x = 0.0;
-        let mut count_y = 0.0;
+        let mut count_x = 0.;
+        let mut count_y = 0.;
         #[allow(unused_assignments)]
         let mut count = 0;
         let mut empty = 0.;
@@ -114,12 +109,12 @@ impl DistMap {
 
         while !queue.is_empty() {
             count = 0;
-            count_x += 1.0;
+            count_x += 1.;
             let state = queue.pop_front().unwrap();
             self.best_option_greedy(state)
                 .into_iter()
                 .for_each(|sub_state| {
-                    count_y += 1.0;
+                    count_y += 1.;
                     if sub_state.value > highest {
                         highest = sub_state.value;
                     }
@@ -196,6 +191,7 @@ fn main() {
             },
         )
         .display();
+
     let end = start.elapsed();
     println!("elapsed time {:?}", end);
 }
