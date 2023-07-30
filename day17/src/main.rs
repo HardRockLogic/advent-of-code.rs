@@ -1,5 +1,5 @@
 #![allow(dead_code, unused_imports)]
-use std::{collections::HashSet, dbg, fmt::write, fs, panic, todo, unimplemented};
+use std::{collections::HashSet, dbg, fmt::write, fs, panic, todo, unimplemented, unreachable};
 
 #[derive(Hash, Clone, Copy, PartialEq, Eq)]
 struct Coord {
@@ -19,7 +19,7 @@ impl Coord {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum Shapes {
     Start,
     Horizontal([Coord; 4]),
@@ -239,7 +239,7 @@ struct Game {
 
 impl Game {
     fn init(i: &str) -> Self {
-        let jets = i.chars().collect::<Vec<_>>();
+        let jets = i.strip_suffix("\n").unwrap().chars().collect::<Vec<_>>();
         let coord_storage = HashSet::new();
         let shape_state = Shapes::Start;
         let shape_coords = Shapes::Start;
@@ -281,10 +281,16 @@ impl Game {
         true
     }
 
-    fn solidify(&mut self) {
+    fn solidify(&mut self) -> u32 {
         for coord in self.shape_coords.unwrap_data() {
             self.coord_storage.insert(coord);
         }
+
+        self.coord_storage
+            .iter()
+            .max_by_key(|coord| coord.y)
+            .unwrap()
+            .y
     }
 }
 
@@ -308,11 +314,42 @@ impl Iterator for Game {
 }
 
 fn main() {
-    let line = fs::read_to_string("test.txt").unwrap();
+    let line = fs::read_to_string("day17.txt").unwrap();
 
-    let coords = [Coord::from(0, 0); 4];
-    let shape = Shapes::Cube(coords).fill(0);
-    dbg!(shape);
+    let mut tetris = Game::init(&line);
+    tetris.spawn_shape(0);
+    let mut counter = 0;
+
+    loop {
+        let turn = tetris.next().unwrap();
+        tetris.next_step = match turn {
+            '<' => tetris.shape_coords.left(),
+            '>' => tetris.shape_coords.right(),
+            _ => unreachable!(),
+        };
+
+        if tetris.is_valid() {
+            tetris.shape_coords = tetris.next_step;
+        }
+
+        tetris.next_step = tetris.shape_coords.down();
+
+        if tetris.is_valid() {
+            tetris.shape_coords = tetris.next_step;
+        } else {
+            let highest = tetris.solidify();
+            tetris.spawn_shape(highest);
+            counter += 1;
+            if counter == 2022 {
+                println!("tower is {} units high", highest);
+                break;
+            }
+        }
+    }
+
+    // let coords = [Coord::from(0, 0); 4];
+    // let shape = Shapes::Cube(coords).fill(0);
+    // dbg!(shape);
 
     // line.strip_suffix("\n")
     //     .unwrap()
