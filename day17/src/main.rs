@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_imports)]
 use std::{collections::HashSet, dbg, fmt::write, fs, panic, todo, unimplemented};
 
-#[derive(Hash, Clone, Copy)]
+#[derive(Hash, Clone, Copy, PartialEq, Eq)]
 struct Coord {
     x: u32,
     y: u32,
@@ -19,7 +19,7 @@ impl Coord {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 enum Shapes {
     Start,
     Horizontal([Coord; 4]),
@@ -30,6 +30,16 @@ enum Shapes {
 }
 
 impl Shapes {
+    fn unwrap_data(&self) -> impl Iterator<Item = Coord> + '_ {
+        match self {
+            Self::Horizontal(arr) => arr.iter().copied(),
+            Self::Plus(arr) => arr.iter().copied(),
+            Self::ReversedL(arr) => arr.iter().copied(),
+            Self::Vertical(arr) => arr.iter().copied(),
+            Self::Cube(arr) => arr.iter().copied(),
+            Self::Start => unimplemented!(),
+        }
+    }
     fn fill(&self, highest_y: u32) -> Self {
         match self {
             Self::Horizontal(_) => {
@@ -77,21 +87,222 @@ impl Shapes {
             Self::Start => unimplemented!(),
         }
     }
+
+    fn left(&self) -> Self {
+        match self {
+            Self::Horizontal(arr) => {
+                let mut new_position = [Coord::from(0, 0); 4];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x - 1;
+                    new_position[i].y = arr[i].y;
+                }
+                Self::Horizontal(new_position)
+            }
+            Self::Plus(arr) => {
+                let mut new_position = [Coord::from(0, 0); 5];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x - 1;
+                    new_position[i].y = arr[i].y;
+                }
+                Self::Plus(new_position)
+            }
+            Self::ReversedL(arr) => {
+                let mut new_position = [Coord::from(0, 0); 5];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x - 1;
+                    new_position[i].y = arr[i].y;
+                }
+                Self::ReversedL(new_position)
+            }
+            Self::Vertical(arr) => {
+                let mut new_position = [Coord::from(0, 0); 4];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x - 1;
+                    new_position[i].y = arr[i].y;
+                }
+                Self::Vertical(new_position)
+            }
+            Self::Cube(arr) => {
+                let mut new_position = [Coord::from(0, 0); 4];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x - 1;
+                    new_position[i].y = arr[i].y;
+                }
+                Self::Cube(new_position)
+            }
+            Self::Start => unimplemented!(),
+        }
+    }
+
+    fn right(&self) -> Self {
+        match self {
+            Self::Horizontal(arr) => {
+                let mut new_position = [Coord::from(0, 0); 4];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x + 1;
+                    new_position[i].y = arr[i].y;
+                }
+                Self::Horizontal(new_position)
+            }
+            Self::Plus(arr) => {
+                let mut new_position = [Coord::from(0, 0); 5];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x + 1;
+                    new_position[i].y = arr[i].y;
+                }
+                Self::Plus(new_position)
+            }
+            Self::ReversedL(arr) => {
+                let mut new_position = [Coord::from(0, 0); 5];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x + 1;
+                    new_position[i].y = arr[i].y;
+                }
+                Self::ReversedL(new_position)
+            }
+            Self::Vertical(arr) => {
+                let mut new_position = [Coord::from(0, 0); 4];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x + 1;
+                    new_position[i].y = arr[i].y;
+                }
+                Self::Vertical(new_position)
+            }
+            Self::Cube(arr) => {
+                let mut new_position = [Coord::from(0, 0); 4];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x + 1;
+                    new_position[i].y = arr[i].y;
+                }
+                Self::Cube(new_position)
+            }
+            Self::Start => unimplemented!(),
+        }
+    }
+
+    fn down(&self) -> Self {
+        match self {
+            Self::Horizontal(arr) => {
+                let mut new_position = [Coord::from(0, 0); 4];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x;
+                    new_position[i].y = arr[i].y - 1;
+                }
+                Self::Horizontal(new_position)
+            }
+            Self::Plus(arr) => {
+                let mut new_position = [Coord::from(0, 0); 5];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x;
+                    new_position[i].y = arr[i].y - 1;
+                }
+                Self::Plus(new_position)
+            }
+            Self::ReversedL(arr) => {
+                let mut new_position = [Coord::from(0, 0); 5];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x;
+                    new_position[i].y = arr[i].y - 1;
+                }
+                Self::ReversedL(new_position)
+            }
+            Self::Vertical(arr) => {
+                let mut new_position = [Coord::from(0, 0); 4];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x;
+                    new_position[i].y = arr[i].y - 1;
+                }
+                Self::Vertical(new_position)
+            }
+            Self::Cube(arr) => {
+                let mut new_position = [Coord::from(0, 0); 4];
+                for i in 0..arr.len() {
+                    new_position[i].x = arr[i].x;
+                    new_position[i].y = arr[i].y - 1;
+                }
+                Self::Cube(new_position)
+            }
+            Self::Start => unimplemented!(),
+        }
+    }
 }
 
+#[derive(PartialEq, Eq)]
 struct Game {
     coord_storage: HashSet<Coord>,
     shape_state: Shapes,
     jets: Vec<char>,
     jet_state: usize,
+    shape_coords: Shapes,
+    next_step: Shapes,
 }
 
 impl Game {
+    fn init(i: &str) -> Self {
+        let jets = i.chars().collect::<Vec<_>>();
+        let coord_storage = HashSet::new();
+        let shape_state = Shapes::Start;
+        let shape_coords = Shapes::Start;
+        let next_step = Shapes::Start;
+        let jet_state = 0;
+
+        Self {
+            coord_storage,
+            shape_state,
+            jets,
+            jet_state,
+            shape_coords,
+            next_step,
+        }
+    }
+
     fn spawn_shape(&mut self, highest_y: u32) {
-        let coords = [Coord::from(0, 0); 4];
+        let coords_4 = [Coord::from(0, 0); 4];
+        let coords_5 = [Coord::from(0, 0); 5];
+
         self.shape_state = match self.shape_state {
-            Shapes::Start => Shapes::Horizontal(coords),
-            _ => todo!(),
+            Shapes::Start => Shapes::Horizontal(coords_4),
+            Shapes::Horizontal(_) => Shapes::Plus(coords_5),
+            Shapes::Plus(_) => Shapes::ReversedL(coords_5),
+            Shapes::ReversedL(_) => Shapes::Vertical(coords_4),
+            Shapes::Vertical(_) => Shapes::Cube(coords_4),
+            Shapes::Cube(_) => Shapes::Horizontal(coords_4),
+        };
+
+        self.shape_coords = self.shape_state.fill(highest_y);
+    }
+
+    fn is_valid(&self) -> bool {
+        for coord in self.next_step.unwrap_data() {
+            if coord.x == 0 || coord.x == 8 || coord.y == 0 || self.coord_storage.contains(&coord) {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn solidify(&mut self) {
+        for coord in self.shape_coords.unwrap_data() {
+            self.coord_storage.insert(coord);
+        }
+    }
+}
+
+impl Iterator for Game {
+    type Item = char;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.jet_state < self.jets.len() {
+            let item = self.jets[self.jet_state];
+            self.jet_state += 1;
+            Some(item)
+        } else {
+            self.jet_state = 1;
+            if !self.jets.is_empty() {
+                Some(self.jets[0])
+            } else {
+                None
+            }
         }
     }
 }
