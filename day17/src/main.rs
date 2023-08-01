@@ -1,10 +1,15 @@
 #![allow(dead_code, unused_imports)]
-use std::{collections::HashSet, dbg, fmt::write, fs, panic, todo, unimplemented, unreachable};
+use std::{
+    collections::{HashSet, VecDeque},
+    dbg,
+    fmt::write,
+    fs, panic, todo, unimplemented, unreachable,
+};
 
 #[derive(Hash, Clone, Copy, PartialEq, Eq)]
 struct Coord {
-    x: u32,
-    y: u32,
+    x: u64,
+    y: u64,
 }
 
 impl std::fmt::Debug for Coord {
@@ -14,7 +19,7 @@ impl std::fmt::Debug for Coord {
 }
 
 impl Coord {
-    fn from(x: u32, y: u32) -> Self {
+    fn from(x: u64, y: u64) -> Self {
         Self { x, y }
     }
 }
@@ -40,7 +45,7 @@ impl Shapes {
             Self::Start => unimplemented!(),
         }
     }
-    fn fill(&self, highest_y: u32) -> Self {
+    fn create(&self, highest_y: u64) -> Self {
         match self {
             Self::Horizontal(_) => {
                 let a = Coord::from(3, highest_y + 4);
@@ -229,22 +234,24 @@ impl Shapes {
 
 #[derive(PartialEq, Eq)]
 struct Game {
-    coord_storage: HashSet<Coord>,
+    coord_storage: VecDeque<Coord>,
     shape_state: Shapes,
     jets: Vec<char>,
     jet_state: usize,
     shape_coords: Shapes,
     next_step: Shapes,
+    move_window: bool,
 }
 
 impl Game {
     fn init(i: &str) -> Self {
         let jets = i.strip_suffix("\n").unwrap().chars().collect::<Vec<_>>();
-        let coord_storage = HashSet::new();
+        let coord_storage = VecDeque::new();
         let shape_state = Shapes::Start;
         let shape_coords = Shapes::Start;
         let next_step = Shapes::Start;
         let jet_state = 0;
+        let move_window = false;
 
         Self {
             coord_storage,
@@ -253,10 +260,11 @@ impl Game {
             jet_state,
             shape_coords,
             next_step,
+            move_window,
         }
     }
 
-    fn spawn_shape(&mut self, highest_y: u32) {
+    fn spawn_shape(&mut self, highest_y: u64) {
         let coords_4 = [Coord::from(0, 0); 4];
         let coords_5 = [Coord::from(0, 0); 5];
 
@@ -269,7 +277,19 @@ impl Game {
             Shapes::Cube(_) => Shapes::Horizontal(coords_4),
         };
 
-        self.shape_coords = self.shape_state.fill(highest_y);
+        self.shape_coords = self.shape_state.create(highest_y);
+    }
+
+    fn left(&mut self) {
+        self.next_step = self.shape_coords.left();
+    }
+
+    fn right(&mut self) {
+        self.next_step = self.shape_coords.right();
+    }
+
+    fn down(&mut self) {
+        self.next_step = self.shape_coords.down();
     }
 
     fn is_valid(&self) -> bool {
@@ -281,9 +301,20 @@ impl Game {
         true
     }
 
-    fn solidify(&mut self) -> u32 {
-        for coord in self.shape_coords.unwrap_data() {
-            self.coord_storage.insert(coord);
+    fn solidify(&mut self) -> u64 {
+        if self.coord_storage.len() > 100 {
+            self.move_window = true;
+        }
+
+        if self.move_window {
+            for coord in self.shape_coords.unwrap_data() {
+                self.coord_storage.push_back(coord);
+                self.coord_storage.pop_front();
+            }
+        } else {
+            for coord in self.shape_coords.unwrap_data() {
+                self.coord_storage.push_back(coord);
+            }
         }
 
         self.coord_storage
@@ -318,13 +349,17 @@ fn main() {
 
     let mut tetris = Game::init(&line);
     tetris.spawn_shape(0);
-    let mut counter = 0;
+
+    let mut counter: u64 = 0;
+    let part1_goal: u64 = 2022;
+    let part2_goal: u64 = 1_000_000_000_000;
 
     loop {
         let turn = tetris.next().unwrap();
-        tetris.next_step = match turn {
-            '<' => tetris.shape_coords.left(),
-            '>' => tetris.shape_coords.right(),
+
+        match turn {
+            '<' => tetris.left(),
+            '>' => tetris.right(),
             _ => unreachable!(),
         };
 
@@ -332,7 +367,7 @@ fn main() {
             tetris.shape_coords = tetris.next_step;
         }
 
-        tetris.next_step = tetris.shape_coords.down();
+        tetris.down();
 
         if tetris.is_valid() {
             tetris.shape_coords = tetris.next_step;
@@ -340,23 +375,13 @@ fn main() {
             let highest = tetris.solidify();
             tetris.spawn_shape(highest);
             counter += 1;
-            if counter == 2022 {
+            if counter % 10_000 == 0 {
+                println!("{counter}");
+            }
+            if counter == part1_goal {
                 println!("tower is {} units high", highest);
                 break;
             }
         }
     }
-
-    // let coords = [Coord::from(0, 0); 4];
-    // let shape = Shapes::Cube(coords).fill(0);
-    // dbg!(shape);
-
-    // line.strip_suffix("\n")
-    //     .unwrap()
-    //     .chars()
-    //     .for_each(|l| match l {
-    //         '<' => println!("left jet"),
-    //         '>' => println!("right jet"),
-    //         _ => unreachable!(),
-    //     })
 }
