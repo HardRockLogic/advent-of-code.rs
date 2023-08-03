@@ -5,7 +5,7 @@ mod parser;
 use parser::{parse_all_monkeys, Monkey};
 
 fn main() {
-    let mut monkeys = parse_all_monkeys(concat!(include_str!("../../day11.txt"), "\n"))
+    let mut monkeys = parse_all_monkeys(concat!(include_str!("../day11.txt"), "\n"))
         .finish()
         .unwrap()
         .1;
