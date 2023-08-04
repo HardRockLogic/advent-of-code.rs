@@ -311,29 +311,52 @@ impl Game {
     }
 
     fn solidify(&mut self) -> u64 {
-        // if self.coord_storage.len() > 100 {
-        //     self.move_window = true;
-        // }
-        //
-        // if self.move_window {
-        //     for coord in self.shape_coords.unwrap_data() {
-        //         self.coord_storage.push_back(coord);
-        //         self.coord_storage.pop_front();
-        //     }
-        // } else {
-        //     for coord in self.shape_coords.unwrap_data() {
-        //         self.coord_storage.push_back(coord);
-        //     }
-        // }
-        for coord in self.shape_coords.unwrap_data() {
-            self.coord_storage.push_back(coord);
+        if self.coord_storage.len() > 200 {
+            self.move_window = true;
         }
 
-        self.coord_storage
+        if self.move_window {
+            for coord in self.shape_coords.unwrap_data() {
+                self.coord_storage.push_back(coord);
+                self.coord_storage.pop_front();
+            }
+        } else {
+            for coord in self.shape_coords.unwrap_data() {
+                self.coord_storage.push_back(coord);
+            }
+        }
+        // for coord in self.shape_coords.unwrap_data() {
+        //     self.coord_storage.push_back(coord);
+        // }
+
+        let highest = self
+            .coord_storage
             .iter()
             .max_by_key(|coord| coord.y)
             .unwrap()
-            .y
+            .y;
+
+        // let mut floor: Option<u64> = None;
+        // let mut is_exist = true;
+        //
+        // 'outer: for y in (0..=highest).rev() {
+        //     for x in 1..=7 {
+        //         let tempo_coord = Coord::from(x, y);
+        //         if !self.coord_storage.contains(&tempo_coord) {
+        //             is_exist = false;
+        //         }
+        //         if x == 7 && is_exist {
+        //             floor = Some(y);
+        //             break 'outer;
+        //         }
+        //     }
+        // }
+        //
+        // if let Some(floor_y) = floor {
+        //     self.coord_storage.retain(|coord| coord.y >= floor_y);
+        // }
+
+        highest
     }
 }
 
@@ -344,7 +367,6 @@ impl Iterator for Game {
         if self.jet_state < self.jets.len() {
             let item = self.jets[self.jet_state];
             self.jet_state += 1;
-            // println!("peek in next; {} < {}", self.jet_state, self.jets.len());
             Some(item)
         } else {
             self.jet_state = 1;
@@ -376,7 +398,10 @@ fn main() {
 
     while total_pieces < part2_goal {
         let turn = tetris.next().unwrap();
-
+        // if total_pieces == 2048 {
+        //     let one = tetris.coord_storage.contains(&Coord::from(2, 3179));
+        //     println!("{one}");
+        // }
         match turn {
             '<' => tetris.left(),
             '>' => tetris.right(),
@@ -389,12 +414,28 @@ fn main() {
 
         tetris.down();
 
+        // if total_pieces < 2080 && total_pieces > 1000 && total_pieces != 2048 {
+        //     println!("{total_pieces}");
+        // }
+        // if total_pieces == 2048 {
+        //     println!(
+        //         "current: {:?} - next: {:?}",
+        //         tetris.next_step, tetris.shape_coords
+        //     );
+        // }
         if tetris.is_valid() {
             tetris.shape_coords = tetris.next_step;
         } else {
             let highest = tetris.solidify();
+            // if total_pieces == 2048 {
+            //     println!(
+            //         "faulted: {:?}\nsolidified: {:?}\nhighest: {highest}\n edge: {edge_state:?}",
+            //         tetris.next_step, tetris.shape_coords
+            //     );
+            // }
             tetris.spawn_shape(highest);
             total_pieces += 1;
+
             if total_pieces == part2_goal {
                 let answer = highest + (skipped_cycles * cycle_height);
                 println!("tower is {} units high", answer);
@@ -419,19 +460,22 @@ fn main() {
 
                 let lowest = edge_state.iter().copied().min().unwrap();
                 // dbg!(lowest);
-                // edge_state.iter_mut().for_each(|edge| *edge -= lowest);
-                let mut edge_state = edge_state
-                    .into_iter()
-                    .map(|edge| edge - lowest)
-                    .collect::<Vec<_>>();
+                edge_state.iter_mut().for_each(|edge| *edge -= lowest);
+                // let mut edge_state = edge_state
+                //     .into_iter()
+                //     .map(|edge| edge - lowest)
+                //     .collect::<Vec<_>>();
                 edge_state.extend([tetris.shape_state_index, tetris.jet_state as u64].into_iter());
                 // edge_state[7] = tetris.shape_state_index;
                 // edge_state[8] = tetris.jet_state as u64;
 
+                // println!("{:?}", edge_state);
                 if let Some(stored_data) = edge_shapes.get(&edge_state) {
-                    println!("cycle detected on: {total_pieces}");
                     cycle_height = highest - stored_data[0];
                     let pieces_in_cycle = total_pieces - stored_data[1];
+
+                    println!("cycle detected on: {total_pieces} with {pieces_in_cycle} pieces");
+                    // dbg!(edge_state);
 
                     skipped_cycles = (part2_goal - total_pieces) / pieces_in_cycle;
                     total_pieces += skipped_cycles * pieces_in_cycle;
