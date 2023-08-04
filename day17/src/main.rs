@@ -390,7 +390,7 @@ fn main() {
     let part1_goal: u64 = 2022;
     let part2_goal: u64 = 1_000_000_000_000;
 
-    let mut edge_shapes = HashMap::<Vec<u64>, [u64; 2]>::new();
+    let mut edge_shapes = HashMap::<[u64; 9], [u64; 2]>::new();
     let mut cycle_detected = false;
     let mut total_pieces: u64 = 0;
     let mut cycle_height: u64 = 0;
@@ -445,43 +445,46 @@ fn main() {
             // Detecting cycle
             if !cycle_detected {
                 // 8th and 9th values are adtitional;
-                let mut edge_state: Vec<u64> = Vec::new();
+                // let mut edge_state: Vec<u64> = Vec::new();
+                let mut edge_state: [u64; 9] = [0; 9];
                 for i in 0..7 {
-                    edge_state.push(
-                        tetris
-                            .coord_storage
-                            .iter()
-                            .filter(|coord| coord.x as usize == i + 1)
-                            .map(|coord| coord.y)
-                            .max()
-                            .unwrap_or_default(),
-                    )
+                    // edge_state.push(
+                    //     tetris
+                    //         .coord_storage
+                    //         .iter()
+                    //         .filter(|coord| coord.x as usize == i + 1)
+                    //         .map(|coord| coord.y)
+                    //         .max()
+                    //         .unwrap_or_default(),
+                    // )
+                    edge_state[i] = tetris
+                        .coord_storage
+                        .iter()
+                        .filter(|coord| coord.x as usize == i + 1)
+                        .map(|coord| coord.y)
+                        .max()
+                        .unwrap_or_default();
                 }
 
-                let lowest = edge_state.iter().copied().min().unwrap();
-                // dbg!(lowest);
-                edge_state.iter_mut().for_each(|edge| *edge -= lowest);
-                // let mut edge_state = edge_state
-                //     .into_iter()
-                //     .map(|edge| edge - lowest)
-                //     .collect::<Vec<_>>();
-                edge_state.extend([tetris.shape_state_index, tetris.jet_state as u64].into_iter());
-                // edge_state[7] = tetris.shape_state_index;
-                // edge_state[8] = tetris.jet_state as u64;
+                let lowest = edge_state.iter().take(7).copied().min().unwrap();
+                edge_state
+                    .iter_mut()
+                    .take(7)
+                    .for_each(|edge| *edge -= lowest);
+                // edge_state.extend([tetris.shape_state_index, tetris.jet_state as u64].into_iter());
+                edge_state[7] = tetris.shape_state_index;
+                edge_state[8] = tetris.jet_state as u64;
 
-                // println!("{:?}", edge_state);
                 if let Some(stored_data) = edge_shapes.get(&edge_state) {
                     cycle_height = highest - stored_data[0];
                     let pieces_in_cycle = total_pieces - stored_data[1];
 
                     println!("cycle detected on: {total_pieces} with {pieces_in_cycle} pieces");
-                    // dbg!(edge_state);
 
                     skipped_cycles = (part2_goal - total_pieces) / pieces_in_cycle;
                     total_pieces += skipped_cycles * pieces_in_cycle;
                     cycle_detected = true;
                 } else {
-                    // println!("{edge_state:?}");
                     edge_shapes.insert(edge_state, [highest, total_pieces]);
                 }
             }
