@@ -1,9 +1,9 @@
 #![allow(dead_code, unused_imports)]
 use std::{
-    collections::{HashSet, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     dbg,
     fmt::write,
-    fs, panic, todo, unimplemented, unreachable,
+    fs, panic, println, todo, unimplemented, unreachable,
 };
 
 #[derive(Hash, Clone, Copy, PartialEq, Eq)]
@@ -236,6 +236,7 @@ impl Shapes {
 struct Game {
     coord_storage: VecDeque<Coord>,
     shape_state: Shapes,
+    shape_state_index: u64,
     jets: Vec<char>,
     jet_state: usize,
     shape_coords: Shapes,
@@ -248,6 +249,7 @@ impl Game {
         let jets = i.strip_suffix("\n").unwrap().chars().collect::<Vec<_>>();
         let coord_storage = VecDeque::new();
         let shape_state = Shapes::Start;
+        let shape_state_index = 0;
         let shape_coords = Shapes::Start;
         let next_step = Shapes::Start;
         let jet_state = 0;
@@ -256,6 +258,7 @@ impl Game {
         Self {
             coord_storage,
             shape_state,
+            shape_state_index,
             jets,
             jet_state,
             shape_coords,
@@ -276,6 +279,12 @@ impl Game {
             Shapes::Vertical(_) => Shapes::Cube(coords_4),
             Shapes::Cube(_) => Shapes::Horizontal(coords_4),
         };
+
+        if self.shape_state_index < 5 {
+            self.shape_state_index += 1;
+        } else {
+            self.shape_state_index = 1;
+        }
 
         self.shape_coords = self.shape_state.create(highest_y);
     }
@@ -302,19 +311,22 @@ impl Game {
     }
 
     fn solidify(&mut self) -> u64 {
-        if self.coord_storage.len() > 100 {
-            self.move_window = true;
-        }
-
-        if self.move_window {
-            for coord in self.shape_coords.unwrap_data() {
-                self.coord_storage.push_back(coord);
-                self.coord_storage.pop_front();
-            }
-        } else {
-            for coord in self.shape_coords.unwrap_data() {
-                self.coord_storage.push_back(coord);
-            }
+        // if self.coord_storage.len() > 100 {
+        //     self.move_window = true;
+        // }
+        //
+        // if self.move_window {
+        //     for coord in self.shape_coords.unwrap_data() {
+        //         self.coord_storage.push_back(coord);
+        //         self.coord_storage.pop_front();
+        //     }
+        // } else {
+        //     for coord in self.shape_coords.unwrap_data() {
+        //         self.coord_storage.push_back(coord);
+        //     }
+        // }
+        for coord in self.shape_coords.unwrap_data() {
+            self.coord_storage.push_back(coord);
         }
 
         self.coord_storage
@@ -332,6 +344,7 @@ impl Iterator for Game {
         if self.jet_state < self.jets.len() {
             let item = self.jets[self.jet_state];
             self.jet_state += 1;
+            // println!("peek in next; {} < {}", self.jet_state, self.jets.len());
             Some(item)
         } else {
             self.jet_state = 1;
@@ -350,11 +363,18 @@ fn main() {
     let mut tetris = Game::init(&line);
     tetris.spawn_shape(0);
 
-    let mut counter: u64 = 0;
+    // let mut counter: u64 = 0;
+    #[allow(unused_variables)]
     let part1_goal: u64 = 2022;
     let part2_goal: u64 = 1_000_000_000_000;
 
-    loop {
+    let mut edge_shapes = HashMap::<Vec<u64>, [u64; 2]>::new();
+    let mut cycle_detected = false;
+    let mut total_pieces: u64 = 0;
+    let mut cycle_height: u64 = 0;
+    let mut skipped_cycles: u64 = 0;
+
+    while total_pieces < part2_goal {
         let turn = tetris.next().unwrap();
 
         match turn {
@@ -374,13 +394,52 @@ fn main() {
         } else {
             let highest = tetris.solidify();
             tetris.spawn_shape(highest);
-            counter += 1;
-            if counter % 10_000 == 0 {
-                println!("{counter}");
-            }
-            if counter == part1_goal {
-                println!("tower is {} units high", highest);
+            total_pieces += 1;
+            if total_pieces == part2_goal {
+                let answer = highest + (skipped_cycles * cycle_height);
+                println!("tower is {} units high", answer);
                 break;
+            }
+
+            // Detecting cycle
+            if !cycle_detected {
+                // 8th and 9th values are adtitional;
+                let mut edge_state: Vec<u64> = Vec::new();
+                for i in 0..7 {
+                    edge_state.push(
+                        tetris
+                            .coord_storage
+                            .iter()
+                            .filter(|coord| coord.x as usize == i + 1)
+                            .map(|coord| coord.y)
+                            .max()
+                            .unwrap_or_default(),
+                    )
+                }
+
+                let lowest = edge_state.iter().copied().min().unwrap();
+                // dbg!(lowest);
+                // edge_state.iter_mut().for_each(|edge| *edge -= lowest);
+                let mut edge_state = edge_state
+                    .into_iter()
+                    .map(|edge| edge - lowest)
+                    .collect::<Vec<_>>();
+                edge_state.extend([tetris.shape_state_index, tetris.jet_state as u64].into_iter());
+                // edge_state[7] = tetris.shape_state_index;
+                // edge_state[8] = tetris.jet_state as u64;
+
+                if let Some(stored_data) = edge_shapes.get(&edge_state) {
+                    println!("cycle detected on: {total_pieces}");
+                    cycle_height = highest - stored_data[0];
+                    let pieces_in_cycle = total_pieces - stored_data[1];
+
+                    skipped_cycles = (part2_goal - total_pieces) / pieces_in_cycle;
+                    total_pieces += skipped_cycles * pieces_in_cycle;
+                    cycle_detected = true;
+                } else {
+                    // println!("{edge_state:?}");
+                    edge_shapes.insert(edge_state, [highest, total_pieces]);
+                }
             }
         }
     }
