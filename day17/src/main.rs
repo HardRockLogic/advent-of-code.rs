@@ -336,26 +336,6 @@ impl Game {
             .unwrap()
             .y;
 
-        // let mut floor: Option<u64> = None;
-        // let mut is_exist = true;
-        //
-        // 'outer: for y in (0..=highest).rev() {
-        //     for x in 1..=7 {
-        //         let tempo_coord = Coord::from(x, y);
-        //         if !self.coord_storage.contains(&tempo_coord) {
-        //             is_exist = false;
-        //         }
-        //         if x == 7 && is_exist {
-        //             floor = Some(y);
-        //             break 'outer;
-        //         }
-        //     }
-        // }
-        //
-        // if let Some(floor_y) = floor {
-        //     self.coord_storage.retain(|coord| coord.y >= floor_y);
-        // }
-
         highest
     }
 }
@@ -398,10 +378,7 @@ fn main() {
 
     while total_pieces < part2_goal {
         let turn = tetris.next().unwrap();
-        // if total_pieces == 2048 {
-        //     let one = tetris.coord_storage.contains(&Coord::from(2, 3179));
-        //     println!("{one}");
-        // }
+
         match turn {
             '<' => tetris.left(),
             '>' => tetris.right(),
@@ -414,25 +391,11 @@ fn main() {
 
         tetris.down();
 
-        // if total_pieces < 2080 && total_pieces > 1000 && total_pieces != 2048 {
-        //     println!("{total_pieces}");
-        // }
-        // if total_pieces == 2048 {
-        //     println!(
-        //         "current: {:?} - next: {:?}",
-        //         tetris.next_step, tetris.shape_coords
-        //     );
-        // }
         if tetris.is_valid() {
             tetris.shape_coords = tetris.next_step;
         } else {
             let highest = tetris.solidify();
-            // if total_pieces == 2048 {
-            //     println!(
-            //         "faulted: {:?}\nsolidified: {:?}\nhighest: {highest}\n edge: {edge_state:?}",
-            //         tetris.next_step, tetris.shape_coords
-            //     );
-            // }
+
             tetris.spawn_shape(highest);
             total_pieces += 1;
 
@@ -448,15 +411,6 @@ fn main() {
                 // let mut edge_state: Vec<u64> = Vec::new();
                 let mut edge_state: [u64; 9] = [0; 9];
                 for i in 0..7 {
-                    // edge_state.push(
-                    //     tetris
-                    //         .coord_storage
-                    //         .iter()
-                    //         .filter(|coord| coord.x as usize == i + 1)
-                    //         .map(|coord| coord.y)
-                    //         .max()
-                    //         .unwrap_or_default(),
-                    // )
                     edge_state[i] = tetris
                         .coord_storage
                         .iter()
@@ -471,7 +425,7 @@ fn main() {
                     .iter_mut()
                     .take(7)
                     .for_each(|edge| *edge -= lowest);
-                // edge_state.extend([tetris.shape_state_index, tetris.jet_state as u64].into_iter());
+
                 edge_state[7] = tetris.shape_state_index;
                 edge_state[8] = tetris.jet_state as u64;
 
