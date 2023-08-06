@@ -359,6 +359,9 @@ impl Iterator for Game {
     }
 }
 
+const PART1_GOAL: u64 = 2022;
+const PART2_GOAL: u64 = 1_000_000_000_000;
+
 fn main() {
     let line = fs::read_to_string("day17.txt").unwrap();
 
@@ -367,16 +370,15 @@ fn main() {
 
     // let mut counter: u64 = 0;
     #[allow(unused_variables)]
-    let part1_goal: u64 = 2022;
-    let part2_goal: u64 = 1_000_000_000_000;
-
+    // let PART1_GOAL: u64 = 2022;
+    // let PART2_GOAL: u64 = 1_000_000_000_000;
     let mut edge_shapes = HashMap::<[u64; 9], [u64; 2]>::new();
     let mut cycle_detected = false;
     let mut total_pieces: u64 = 0;
     let mut cycle_height: u64 = 0;
     let mut skipped_cycles: u64 = 0;
 
-    while total_pieces < part2_goal {
+    while total_pieces < PART2_GOAL {
         let turn = tetris.next().unwrap();
 
         match turn {
@@ -399,7 +401,7 @@ fn main() {
             tetris.spawn_shape(highest);
             total_pieces += 1;
 
-            if total_pieces == part2_goal {
+            if total_pieces == PART2_GOAL {
                 let answer = highest + (skipped_cycles * cycle_height);
                 println!("tower is {} units high", answer);
                 break;
@@ -435,7 +437,7 @@ fn main() {
 
                     println!("cycle detected on: {total_pieces} with {pieces_in_cycle} pieces");
 
-                    skipped_cycles = (part2_goal - total_pieces) / pieces_in_cycle;
+                    skipped_cycles = (PART2_GOAL - total_pieces) / pieces_in_cycle;
                     total_pieces += skipped_cycles * pieces_in_cycle;
                     cycle_detected = true;
                 } else {
