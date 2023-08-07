@@ -4,16 +4,16 @@ use std::{collections::VecDeque, dbg, fs, println};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 struct Coords {
-    x: u8,
-    y: u8,
-    z: u8,
+    x: i8,
+    y: i8,
+    z: i8,
 }
 
 impl Coords {
     fn parse(i: &str) -> Self {
-        let x = i.split(",").nth(0).unwrap().parse::<u8>().unwrap();
-        let y = i.split(",").nth(1).unwrap().parse::<u8>().unwrap();
-        let z = i.split(",").nth(2).unwrap().parse::<u8>().unwrap();
+        let x = i.split(",").nth(0).unwrap().parse::<i8>().unwrap();
+        let y = i.split(",").nth(1).unwrap().parse::<i8>().unwrap();
+        let z = i.split(",").nth(2).unwrap().parse::<i8>().unwrap();
 
         Self { x, y, z }
     }
@@ -26,35 +26,60 @@ impl Coords {
         [dx, dy, dz]
     }
 
-    fn from(x: u8, y: u8, z: u8) -> Self {
+    fn from(x: i8, y: i8, z: i8) -> Self {
         Self { x, y, z }
     }
 
-    fn get_neighbours_3d(&self) -> impl Iterator<Item = Coords> {
-        let right_x = self.x + 1;
-        let left_x: Option<u8> = if self.x != 0 { Some(self.x - 1) } else { None };
-        let up_y = self.y + 1;
-        let down_y: Option<u8> = if self.y != 0 { Some(self.y - 1) } else { None };
-        let fornt_z = self.z + 1;
-        let back_z: Option<u8> = if self.z != 0 { Some(self.z - 1) } else { None };
+    fn get_neighbours_3d(&self, max_x: i8, max_y: i8, max_z: i8) -> impl Iterator<Item = Self> {
+        let right_x: Option<i8> = if self.x < max_x + 2 {
+            Some(self.x + 1)
+        } else {
+            None
+        };
+        let left_x: Option<i8> = if self.x > -2 { Some(self.x - 1) } else { None };
 
-        let a = Self {
-            x: right_x,
-            y: self.y,
-            z: self.z,
+        let up_y: Option<i8> = if self.y < max_y + 2 {
+            Some(self.y + 1)
+        } else {
+            None
         };
-        let b = Self {
-            x: self.x,
-            y: up_y,
-            z: self.z,
-        };
-        let c = Self {
-            x: self.x,
-            y: self.y,
-            z: fornt_z,
-        };
+        let down_y: Option<i8> = if self.y > -2 { Some(self.y - 1) } else { None };
 
-        let mut output = vec![a, b, c];
+        let fornt_z: Option<i8> = if self.z < max_z + 2 {
+            Some(self.z + 1)
+        } else {
+            None
+        };
+        let back_z: Option<i8> = if self.z > -2 { Some(self.z - 1) } else { None };
+
+        let mut output: Vec<Self> = Vec::new();
+
+        if let Some(coord) = right_x {
+            let coords = Self {
+                x: coord,
+                y: self.y,
+                z: self.z,
+            };
+            output.push(coords);
+        }
+
+        if let Some(coord) = up_y {
+            let coords = Self {
+                x: self.x,
+                y: coord,
+                z: self.z,
+            };
+            output.push(coords);
+        }
+
+        if let Some(coord) = fornt_z {
+            let coords = Self {
+                x: self.x,
+                y: self.y,
+                z: coord,
+            };
+            output.push(coords);
+        }
 
         if let Some(coord) = left_x {
             let coords = Self {
@@ -93,10 +118,19 @@ struct Cube {
     bottom: bool,
     face: bool,
     back: bool,
-    is_surface_available: bool,
+    coordinates: Coords,
 }
 
 impl Cube {
+    fn revert_to_default(&mut self) {
+        self.left = false;
+        self.right = false;
+        self.top = false;
+        self.bottom = false;
+        self.face = false;
+        self.back = false;
+    }
+
     fn count_vacant_sides(&self) -> u32 {
         let mut cout = 0;
 
@@ -121,6 +155,30 @@ impl Cube {
 
         cout
     }
+    fn count_vacant_sides_positive(&self) -> u32 {
+        let mut cout = 0;
+
+        if self.left {
+            cout += 1;
+        }
+        if self.right {
+            cout += 1;
+        }
+        if self.top {
+            cout += 1;
+        }
+        if self.bottom {
+            cout += 1;
+        }
+        if self.face {
+            cout += 1;
+        }
+        if self.back {
+            cout += 1;
+        }
+
+        cout
+    }
 }
 
 fn main() {
@@ -131,11 +189,12 @@ fn main() {
         .collect::<Vec<Coords>>();
 
     let mut poli_cube: Vec<Cube> = Vec::new();
-    let mut surface_only_coords: Vec<Coords> = Vec::new();
+    let mut surface_only_coords: Vec<Cube> = Vec::new();
 
     for i in 0..cube_coords.len() {
         let mut cube = Cube::default();
         let prime = cube_coords[i];
+        cube.coordinates = prime;
 
         for j in 0..cube_coords.len() {
             let secondary = cube_coords[j];
@@ -157,52 +216,80 @@ fn main() {
             }
         }
         if cube.count_vacant_sides() > 0 {
-            surface_only_coords.push(prime);
+            surface_only_coords.push(cube);
         }
         poli_cube.push(cube);
     }
 
     let mut counter: u32 = 0;
 
-    for cube in poli_cube.into_iter() {
-        let tempo = cube.count_vacant_sides();
-        counter += tempo;
+    for item in surface_only_coords.iter_mut() {
+        item.revert_to_default();
+    }
+    flood_fill(&mut surface_only_coords);
+
+    for cube in surface_only_coords.into_iter() {
+        counter += cube.count_vacant_sides_positive();
     }
 
-    println!("open sides: {counter}");
+    println!("surface available: {counter}");
+
+    // for cube in poli_cube.into_iter() {
+    //     let tempo = cube.count_vacant_sides();
+    //     counter += tempo;
+    // }
+    //
+    // println!("open sides: {counter}");
 }
 
-// fn flood_fill(surface: &[Coords]) -> u32 {
-//     let mut max_x: u8 = 0;
-//     let mut max_y: u8 = 0;
-//     let mut max_z: u8 = 0;
-//     let mut queue: VecDeque<Coords> = VecDeque::new();
-//
-//     for coord in surface.iter() {
-//         if coord.x > max_x {
-//             max_x = coord.x;
-//         }
-//         if coord.y > max_y {
-//             max_y = coord.y;
-//         }
-//         if coord.z > max_z {
-//             max_z = coord.z;
-//         }
-//     }
-//
-//     queue.push_back(Coords::from(0, 0, 0));
-//
-//     while !queue.is_empty() {
-//         let liquid = queue.pop_front().unwrap();
-//
-//         for coord in liquid.get_neighbours_3d() {
-//             if !queue.contains(&coord) {
-//                 if let Some(cube) = surface.iter().find(|&&item| item == coord) {
-//                     cube.is_surface_available = true;
-//                 }
-//             }
-//         }
-//     }
-//
-//     0
-// }
+fn flood_fill(surface: &mut [Cube]) {
+    let mut max_x: i8 = 0;
+    let mut max_y: i8 = 0;
+    let mut max_z: i8 = 0;
+    let mut queue: VecDeque<Coords> = VecDeque::new();
+    let mut enqueued: Vec<Coords> = Vec::new();
+
+    for coord in surface.iter() {
+        if coord.coordinates.x > max_x {
+            max_x = coord.coordinates.x;
+        }
+        if coord.coordinates.y > max_y {
+            max_y = coord.coordinates.y;
+        }
+        if coord.coordinates.z > max_z {
+            max_z = coord.coordinates.z;
+        }
+    }
+
+    queue.push_back(Coords::from(0, 0, 0));
+    enqueued.push(Coords::from(0, 0, 0));
+
+    while !queue.is_empty() {
+        let liquid = queue.pop_front().unwrap();
+
+        for coord in liquid.get_neighbours_3d(max_x, max_y, max_z) {
+            let deltas = coord.deltas(liquid);
+
+            if !enqueued.contains(&coord) {
+                if let Some(cube) = surface.iter_mut().find(|item| item.coordinates == coord) {
+                    if deltas[0] == 1 && deltas[1] == 0 && deltas[2] == 0 {
+                        cube.left = true;
+                    } else if deltas[0] == -1 && deltas[1] == 0 && deltas[2] == 0 {
+                        cube.right = true;
+                    } else if deltas[0] == 0 && deltas[1] == 1 && deltas[2] == 0 {
+                        cube.bottom = true;
+                    } else if deltas[0] == 0 && deltas[1] == -1 && deltas[2] == 0 {
+                        cube.top = true;
+                    } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == 1 {
+                        cube.back = true;
+                    } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == -1 {
+                        cube.face = true;
+                    }
+                } else {
+                    queue.push_back(coord);
+                    enqueued.push(coord);
+                }
+            }
+        }
+    }
+}
