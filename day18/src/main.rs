@@ -31,26 +31,26 @@ impl Coords {
     }
 
     fn get_neighbours_3d(&self, max_x: i8, max_y: i8, max_z: i8) -> impl Iterator<Item = Self> {
-        let right_x: Option<i8> = if self.x < max_x + 2 {
+        let right_x: Option<i8> = if self.x < max_x + 1 {
             Some(self.x + 1)
         } else {
             None
         };
-        let left_x: Option<i8> = if self.x > -2 { Some(self.x - 1) } else { None };
+        let left_x: Option<i8> = if self.x > -1 { Some(self.x - 1) } else { None };
 
-        let up_y: Option<i8> = if self.y < max_y + 2 {
+        let up_y: Option<i8> = if self.y < max_y + 1 {
             Some(self.y + 1)
         } else {
             None
         };
-        let down_y: Option<i8> = if self.y > -2 { Some(self.y - 1) } else { None };
+        let down_y: Option<i8> = if self.y > -1 { Some(self.y - 1) } else { None };
 
-        let fornt_z: Option<i8> = if self.z < max_z + 2 {
+        let fornt_z: Option<i8> = if self.z < max_z + 1 {
             Some(self.z + 1)
         } else {
             None
         };
-        let back_z: Option<i8> = if self.z > -2 { Some(self.z - 1) } else { None };
+        let back_z: Option<i8> = if self.z > -1 { Some(self.z - 1) } else { None };
 
         let mut output: Vec<Self> = Vec::new();
 
@@ -201,19 +201,20 @@ fn main() {
 
             let deltas = prime.deltas(secondary);
 
-            if deltas[0] == 1 && deltas[1] == 0 && deltas[2] == 0 {
-                cube.left = true;
-            } else if deltas[0] == -1 && deltas[1] == 0 && deltas[2] == 0 {
-                cube.right = true;
-            } else if deltas[0] == 0 && deltas[1] == 1 && deltas[2] == 0 {
-                cube.bottom = true;
-            } else if deltas[0] == 0 && deltas[1] == -1 && deltas[2] == 0 {
-                cube.top = true;
-            } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == 1 {
-                cube.back = true;
-            } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == -1 {
-                cube.face = true;
-            }
+            // if deltas[0] == 1 && deltas[1] == 0 && deltas[2] == 0 {
+            //     cube.left = true;
+            // } else if deltas[0] == -1 && deltas[1] == 0 && deltas[2] == 0 {
+            //     cube.right = true;
+            // } else if deltas[0] == 0 && deltas[1] == 1 && deltas[2] == 0 {
+            //     cube.bottom = true;
+            // } else if deltas[0] == 0 && deltas[1] == -1 && deltas[2] == 0 {
+            //     cube.top = true;
+            // } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == 1 {
+            //     cube.back = true;
+            // } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == -1 {
+            //     cube.face = true;
+            // }
+            check_adjecents(&mut cube, deltas);
         }
         if cube.count_vacant_sides() > 0 {
             surface_only_coords.push(cube);
@@ -223,12 +224,12 @@ fn main() {
 
     let mut counter: u32 = 0;
 
-    for item in surface_only_coords.iter_mut() {
+    for item in poli_cube.iter_mut() {
         item.revert_to_default();
     }
-    flood_fill(&mut surface_only_coords);
+    flood_fill(&mut poli_cube);
 
-    for cube in surface_only_coords.into_iter() {
+    for cube in poli_cube.into_iter() {
         counter += cube.count_vacant_sides_positive();
     }
 
@@ -240,6 +241,22 @@ fn main() {
     // }
     //
     // println!("open sides: {counter}");
+}
+
+fn check_adjecents(cube: &mut Cube, deltas: [i8; 3]) {
+    if deltas[0] == 1 && deltas[1] == 0 && deltas[2] == 0 {
+        cube.left = true;
+    } else if deltas[0] == -1 && deltas[1] == 0 && deltas[2] == 0 {
+        cube.right = true;
+    } else if deltas[0] == 0 && deltas[1] == 1 && deltas[2] == 0 {
+        cube.bottom = true;
+    } else if deltas[0] == 0 && deltas[1] == -1 && deltas[2] == 0 {
+        cube.top = true;
+    } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == 1 {
+        cube.back = true;
+    } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == -1 {
+        cube.face = true;
+    }
 }
 
 fn flood_fill(surface: &mut [Cube]) {
