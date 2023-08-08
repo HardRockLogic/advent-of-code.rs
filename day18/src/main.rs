@@ -1,6 +1,4 @@
-#![allow(dead_code, unused_imports)]
-
-use std::{collections::VecDeque, dbg, fs, println};
+use std::{collections::VecDeque, fs, println};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 struct Coords {
@@ -156,28 +154,7 @@ impl Cube {
         cout
     }
     fn count_vacant_sides_positive(&self) -> u32 {
-        let mut cout = 0;
-
-        if self.left {
-            cout += 1;
-        }
-        if self.right {
-            cout += 1;
-        }
-        if self.top {
-            cout += 1;
-        }
-        if self.bottom {
-            cout += 1;
-        }
-        if self.face {
-            cout += 1;
-        }
-        if self.back {
-            cout += 1;
-        }
-
-        cout
+        6 - self.count_vacant_sides()
     }
 }
 
@@ -189,7 +166,6 @@ fn main() {
         .collect::<Vec<Coords>>();
 
     let mut poli_cube: Vec<Cube> = Vec::new();
-    let mut surface_only_coords: Vec<Cube> = Vec::new();
 
     for i in 0..cube_coords.len() {
         let mut cube = Cube::default();
@@ -201,23 +177,7 @@ fn main() {
 
             let deltas = prime.deltas(secondary);
 
-            // if deltas[0] == 1 && deltas[1] == 0 && deltas[2] == 0 {
-            //     cube.left = true;
-            // } else if deltas[0] == -1 && deltas[1] == 0 && deltas[2] == 0 {
-            //     cube.right = true;
-            // } else if deltas[0] == 0 && deltas[1] == 1 && deltas[2] == 0 {
-            //     cube.bottom = true;
-            // } else if deltas[0] == 0 && deltas[1] == -1 && deltas[2] == 0 {
-            //     cube.top = true;
-            // } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == 1 {
-            //     cube.back = true;
-            // } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == -1 {
-            //     cube.face = true;
-            // }
             check_adjecents(&mut cube, deltas);
-        }
-        if cube.count_vacant_sides() > 0 {
-            surface_only_coords.push(cube);
         }
         poli_cube.push(cube);
     }
@@ -227,22 +187,20 @@ fn main() {
     for item in poli_cube.iter_mut() {
         item.revert_to_default();
     }
+
     flood_fill(&mut poli_cube);
 
+    // For part1 just delete revert_to_default cycle, flood_fill() call and use count_vacant_sides() on counter
     for cube in poli_cube.into_iter() {
         counter += cube.count_vacant_sides_positive();
     }
 
     println!("surface available: {counter}");
-
-    // for cube in poli_cube.into_iter() {
-    //     let tempo = cube.count_vacant_sides();
-    //     counter += tempo;
-    // }
-    //
-    // println!("open sides: {counter}");
 }
 
+// Using this function instead of built in control flow is somewhat 15-20ms loss
+// may be this occurs because of compiler which applies different optimizations
+// when using control flow from a function
 fn check_adjecents(cube: &mut Cube, deltas: [i8; 3]) {
     if deltas[0] == 1 && deltas[1] == 0 && deltas[2] == 0 {
         cube.left = true;
@@ -289,19 +247,7 @@ fn flood_fill(surface: &mut [Cube]) {
 
             if !enqueued.contains(&coord) {
                 if let Some(cube) = surface.iter_mut().find(|item| item.coordinates == coord) {
-                    if deltas[0] == 1 && deltas[1] == 0 && deltas[2] == 0 {
-                        cube.left = true;
-                    } else if deltas[0] == -1 && deltas[1] == 0 && deltas[2] == 0 {
-                        cube.right = true;
-                    } else if deltas[0] == 0 && deltas[1] == 1 && deltas[2] == 0 {
-                        cube.bottom = true;
-                    } else if deltas[0] == 0 && deltas[1] == -1 && deltas[2] == 0 {
-                        cube.top = true;
-                    } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == 1 {
-                        cube.back = true;
-                    } else if deltas[0] == 0 && deltas[1] == 0 && deltas[2] == -1 {
-                        cube.face = true;
-                    }
+                    check_adjecents(cube, deltas);
                 } else {
                     queue.push_back(coord);
                     enqueued.push(coord);
