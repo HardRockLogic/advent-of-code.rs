@@ -24,7 +24,7 @@ impl Coords {
         [dx, dy, dz]
     }
 
-    fn from(x: i8, y: i8, z: i8) -> Self {
+    fn new(x: i8, y: i8, z: i8) -> Self {
         Self { x, y, z }
     }
 
@@ -236,8 +236,8 @@ fn flood_fill(surface: &mut [Cube]) {
         }
     }
 
-    queue.push_back(Coords::from(0, 0, 0));
-    enqueued.push(Coords::from(0, 0, 0));
+    queue.push_back(Coords::new(0, 0, 0));
+    enqueued.push(Coords::new(0, 0, 0));
 
     while !queue.is_empty() {
         let liquid = queue.pop_front().unwrap();
